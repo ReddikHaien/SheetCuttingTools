@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SheetCuttingTools.Abstractions\SheetCuttingTools.Abstractions.csproj" />
+    <ProjectReference Include="..\SheetCuttingTools.Infrastructure\SheetCuttingTools.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

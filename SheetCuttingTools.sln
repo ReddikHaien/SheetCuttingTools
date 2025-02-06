@@ -1,0 +1,63 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SheetCuttingTools.Abstractions", "src\SheetCuttingTools.Abstractions\SheetCuttingTools.Abstractions.csproj", "{7F84EE70-26BA-4F04-97F3-F0461AADD4AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SheetCuttingTools.Segmentation", "src\SheetCuttingTools.Segmentation\SheetCuttingTools.Segmentation.csproj", "{24A9AA01-A295-4F9E-92B0-5FB9F90E4861}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SheetCuttingTools.Behaviors", "src\SheetCuttingTools.Behaviors\SheetCuttingTools.Behaviors.csproj", "{5B0EDDC4-4D7A-457B-B087-76D5B52CF106}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SheetCuttingTools.Infrastructure", "src\SheetCuttingTools.Infrastructure\SheetCuttingTools.Infrastructure.csproj", "{A9B8282D-A680-48C5-BBC7-AB814F4B6850}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SheetCuttingTools.Flattening", "src\SheetCuttingTools.Flattening\SheetCuttingTools.Flattening.csproj", "{7CFDAF13-1C71-41CB-8616-67686B5B9F1C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SheetCuttingTools.Grasshopper", "src\SheetCuttingTools.Grasshopper\SheetCuttingTools.Grasshopper.csproj", "{EBD1C85E-320B-40F9-9E3E-9D3C60DB00EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SheetCuttingTools.Segmentation.Tests", "tests\SheetCuttingTools.Segmentation.Tests\SheetCuttingTools.Segmentation.Tests.csproj", "{78BC08E6-ABE2-4033-A391-235F3A8A002E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{9FDD2A1E-C509-49AF-AA40-AF839872CB68}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7F84EE70-26BA-4F04-97F3-F0461AADD4AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F84EE70-26BA-4F04-97F3-F0461AADD4AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F84EE70-26BA-4F04-97F3-F0461AADD4AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F84EE70-26BA-4F04-97F3-F0461AADD4AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24A9AA01-A295-4F9E-92B0-5FB9F90E4861}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24A9AA01-A295-4F9E-92B0-5FB9F90E4861}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24A9AA01-A295-4F9E-92B0-5FB9F90E4861}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24A9AA01-A295-4F9E-92B0-5FB9F90E4861}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B0EDDC4-4D7A-457B-B087-76D5B52CF106}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B0EDDC4-4D7A-457B-B087-76D5B52CF106}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B0EDDC4-4D7A-457B-B087-76D5B52CF106}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B0EDDC4-4D7A-457B-B087-76D5B52CF106}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9B8282D-A680-48C5-BBC7-AB814F4B6850}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9B8282D-A680-48C5-BBC7-AB814F4B6850}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9B8282D-A680-48C5-BBC7-AB814F4B6850}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9B8282D-A680-48C5-BBC7-AB814F4B6850}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7CFDAF13-1C71-41CB-8616-67686B5B9F1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7CFDAF13-1C71-41CB-8616-67686B5B9F1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7CFDAF13-1C71-41CB-8616-67686B5B9F1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CFDAF13-1C71-41CB-8616-67686B5B9F1C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EBD1C85E-320B-40F9-9E3E-9D3C60DB00EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBD1C85E-320B-40F9-9E3E-9D3C60DB00EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBD1C85E-320B-40F9-9E3E-9D3C60DB00EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBD1C85E-320B-40F9-9E3E-9D3C60DB00EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{78BC08E6-ABE2-4033-A391-235F3A8A002E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78BC08E6-ABE2-4033-A391-235F3A8A002E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78BC08E6-ABE2-4033-A391-235F3A8A002E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78BC08E6-ABE2-4033-A391-235F3A8A002E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{78BC08E6-ABE2-4033-A391-235F3A8A002E} = {9FDD2A1E-C509-49AF-AA40-AF839872CB68}
+	EndGlobalSection
+EndGlobal
