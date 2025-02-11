@@ -17,7 +17,7 @@ namespace SheetCuttingTools.Grasshopper.Models
         private readonly Segment segment;
         private readonly Lazy<Mesh> mesh;
 
-        private GH_Segment(Segment segment, Func<Mesh> meshmaker)
+        private GH_Segment(Segment segment, Func<Mesh> meshmaker): base(segment)
         {
             this.segment = segment;
             mesh = new(meshmaker, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);

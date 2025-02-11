@@ -1,4 +1,6 @@
-﻿using SheetCuttingTools.Abstractions.Models;
+﻿using SheetCuttingTools.Abstractions.Contracts;
+using SheetCuttingTools.Abstractions.Models;
+using SheetCuttingTools.Abstractions.Models.Numerics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,16 +25,45 @@ namespace SheetCuttingTools.Abstractions.Behaviors
 
     public readonly struct FlattenedSegmentCandidate
     {
-        public Vector2 AnchorA { get; init; }
+        /// <summary>
+        /// The first anchor point for the <see cref="PlacedPolygon"/>.
+        /// </summary>
+        public HighPresVector2 AnchorA { get; init; }
 
-        public Vector2 AnchorB { get; init; }
+        /// <summary>
+        /// The second anchor point for the <see cref="PlacedPolygon"/>.
+        /// </summary>
+        public HighPresVector2 AnchorB { get; init; }
 
+        /// <summary>
+        /// The anchor edge for the <see cref="PlacedPolygon"/>.
+        /// </summary>
         public Edge AnchorEdge { get; init; }
 
-        public (int, Vector2)[] GeneratedPoints { get; init; }
+        /// <summary>
+        /// Points belonging to the <see cref="PlacedPolygon"/>.
+        /// </summary>
+        public (int Index, HighPresVector2 Point)[] GeneratedPoints { get; init; }
 
+        /// <summary>
+        /// The polygon being placed.
+        /// </summary>
         public Polygon PlacedPolygon { get; init; }
 
-        public Segment Segment { get; init; }
+        /// <summary>
+        /// Parent segment being flattened
+        /// </summary>
+        public IGeometryProvider Segment { get; init; }
+
+        /// <summary>
+        /// Points already flattened.
+        /// </summary>
+        public IReadOnlyList<HighPresVector2> FlattenedPoints { get; init; }
+
+        /// <summary>
+        /// The boundary of the flattened segment.
+        /// </summary>
+        public IEnumerable<(Edge Original, Edge Placed)> Boundary { get; init; }
+        
     }
 }

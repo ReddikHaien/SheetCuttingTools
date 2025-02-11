@@ -46,10 +46,9 @@
   <ItemGroup>
     <ProjectReference Include="..\SheetCuttingTools.Abstractions\SheetCuttingTools.Abstractions.csproj" />
     <ProjectReference Include="..\SheetCuttingTools.Behaviors\SheetCuttingTools.Behaviors.csproj" />
+    <ProjectReference Include="..\SheetCuttingTools.Flattening\SheetCuttingTools.Flattening.csproj" />
+    <ProjectReference Include="..\SheetCuttingTools.GeometryMaking\SheetCuttingTools.GeometryMaking.csproj" />
     <ProjectReference Include="..\SheetCuttingTools.Segmentation\SheetCuttingTools.Segmentation.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Components\Unrolling\" />
   </ItemGroup>
 
 </Project>

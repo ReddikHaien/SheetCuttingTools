@@ -2,6 +2,7 @@
 using Rhino.Geometry;
 using SheetCuttingTools.Abstractions.Contracts;
 using SheetCuttingTools.Abstractions.Models;
+using SheetCuttingTools.Grasshopper.Models;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -14,6 +15,7 @@ namespace SheetCuttingTools.Grasshopper.Helpers
             => value switch
             {
                 IGeometryProvider gp => gp,
+                GH_Segment s => s.Value,
                 Mesh m => m.CrateGeometryProviderFromMesh(),
                 GH_Mesh m => m.Value.CrateGeometryProviderFromMesh(),
                 _ => throw new InvalidOperationException($"{value.GetType().Name} is not a supported geometry type")

@@ -16,11 +16,27 @@ namespace SheetCuttingTools.Abstractions.Models
         where TKey : notnull
     {
 
+        public MutableLookup() : this(Array.Empty<(TKey, TElement)>().ToLookup(x => x.Item1, x => x.Item2))
+        {
+
+        }
+
         private readonly Dictionary<TKey, List<TElement>> dict = lookup.ToDictionary(x => x.Key, x => x.ToList());
         public IReadOnlyList<TElement> this[TKey key]
         {
             get => dict.TryGetValue(key, out var x) ? x : [];
             set => dict[key] = [.. value];
+        }
+
+        public void Add(TKey key, TElement value)
+        {
+            if (!dict.TryGetValue(key, out List<TElement>? list))
+            {
+                list = [value];
+                dict.Add(key, list);
+                return;
+            }
+            list.Add(value);
         }
 
         public void RemoveElement(TKey key, TElement value)

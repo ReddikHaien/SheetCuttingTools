@@ -33,7 +33,7 @@ namespace SheetCuttingTools.Segmentation.Models
         {
             Polygons.Add(polygon);
 
-            if (Constraints.Length > 0)
+            if (Constraints.Length > 0 && Polygons.Count > 1)
             {
                 var candidate = new SegmentCandidate(Id, Polygons, this);
                 if (!Constraints.All(x => x.ValidateSegment(candidate)))

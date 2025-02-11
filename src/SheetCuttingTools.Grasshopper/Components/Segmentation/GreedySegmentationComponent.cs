@@ -47,11 +47,11 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
                 try
                 {
                     var segmentor = new GreedySegmentator(polygonScorers, edgeFilters, segmentConstraints);
-                    segments = segmentor.SegmentateModel(geometry);
+                    segments = segmentor.SegmentateModel(geometry, CancellationToken);
                     Done();
                 }catch(Exception e)
                 {
-                    AddErrorMessage(e.Message);
+                    AddErrorMessage($"Something went wrong: {e}");
                 }
             }
 

@@ -55,6 +55,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
 
                     for (int i = 0; i < numSegments; i++)
                     {
+                        CancellationToken.ThrowIfCancellationRequested();
                         (double sin, double cos) = Math.SinCos(i * radPerSplit);
 
                         var p1 = plane.PointAt(sin * radius, cos * radius) + bound.Center - plane.Normal * radius;
@@ -67,7 +68,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
                         var curve = new Polyline(5);
                         curve.AddRange([p1, bound.Center - plane.Normal * radius, p2, p3, p1]);
 
-                        var cutter = Surface.CreateExtrusion(curve.ToPolylineCurve(), Vector3d.ZAxis * radius * 2);
+                        var cutter = Surface.CreateExtrusion(curve.ToPolylineCurve(), plane.Normal * radius * 2);
 
                         var cb = Brep.CreateFromSurface(cutter);
                         cb.Flip();
@@ -124,8 +125,6 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
                     {
                         CancellationToken.ThrowIfCancellationRequested();
 
-
-
                         var geo = Mesh.CreateFromBrep(all[i], MeshingParameters.QualityRenderMesh).Select(x => x.CreateGeometryProvider()).ToArray();
 
                         segments.AddRange(geo.Select(x => new Segment(x)
@@ -143,7 +142,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
                 {
-
+                    AddErrorMessage($"Something went wrong: {e}");
                 }
             }
 

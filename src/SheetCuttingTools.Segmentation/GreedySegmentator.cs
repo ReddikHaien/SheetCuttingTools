@@ -24,11 +24,11 @@ namespace SheetCuttingTools.Segmentation
         public IEdgeFilter[] EdgeFilters { get; } = edgeFilters;
         public ISegmentConstraint[] SegmentConstraints { get; } = segmentConstraints;
 
-        public Segment[] SegmentateModel(IGeometryProvider model)
+        public Segment[] SegmentateModel(IGeometryProvider model, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (model.Polygons.Count == 0)
                 return [];
-
 
             List<Polygon> polygons = [.. model.Polygons];
             var neighbours = model.Polygons
@@ -38,11 +38,11 @@ namespace SheetCuttingTools.Segmentation
 
             List<SegmentBuilder> segments = [];
 
-
             segments.Add(CreateNewBuilder(polygons, neighbours, model));
 
             while (polygons.Count > 0)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 bool found = false;
                 var segmentBuilder = segments[^1];
                 var edges = segmentBuilder.Boundary
