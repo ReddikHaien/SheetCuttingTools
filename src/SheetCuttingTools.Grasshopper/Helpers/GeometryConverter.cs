@@ -3,6 +3,7 @@ using Rhino.Geometry;
 using SheetCuttingTools.Abstractions.Contracts;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Grasshopper.Models;
+using SheetCuttingTools.Grasshopper.Models.Internal;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -14,14 +15,17 @@ namespace SheetCuttingTools.Grasshopper.Helpers
         public static IGeometryProvider CreateGeometryProvider(this object value)
             => value switch
             {
+                GH_ObjectWrapper o => o.Value.CreateGeometryProvider(),
                 IGeometryProvider gp => gp,
                 GH_Segment s => s.Value,
-                Mesh m => m.CrateGeometryProviderFromMesh(),
-                GH_Mesh m => m.Value.CrateGeometryProviderFromMesh(),
+                Mesh m => m.CreateGeometryProvider(),
+                GH_Mesh m => m.Value.CreateGeometryProvider(),
+                Brep b => new BrepSegment(b),
+                GH_Brep b => new BrepSegment(b.Value),
                 _ => throw new InvalidOperationException($"{value.GetType().Name} is not a supported geometry type")
             };
 
-        private static IGeometryProvider CrateGeometryProviderFromMesh(this Mesh mesh)
+        private static IGeometryProvider CreateGeometryProvider(this Mesh mesh)
         {
             mesh.MergeAllCoplanarFaces(0.0);
 

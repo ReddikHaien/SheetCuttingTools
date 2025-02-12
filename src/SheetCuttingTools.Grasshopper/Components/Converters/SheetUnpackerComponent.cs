@@ -2,6 +2,7 @@
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using Rhino.DocObjects;
 using Rhino.Geometry;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Grasshopper.Helpers;
@@ -58,15 +59,36 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
             foreach(var group in sheet.Lines)
             {
                 categories.Add(group.Key);
-                var j = 0;
                 foreach(var line in group)
                 {
-                    var path = new GH_Path(0, i, j++);
+                    var path = new GH_Path(0, DA.Iteration, i);
                     var poly = new Polyline(line.Length);
                     poly.AddRange(line.Select(x => (Point3d)x.ToPoint3f()));
                     curves.Add(poly.ToPolylineCurve(), path);
                 }
                 i++;
+            }
+
+            categories.Add("EdgeLabels");
+            foreach(var (edge, name) in sheet.BoundaryNames)
+            {
+                var (a, b) = sheet.FlattenedSegment.GetEdge(edge);
+                var p = (a + b) / 2;
+
+                var plane = Plane.WorldXY;
+
+                plane.Origin = p.ToPoint3f();
+
+                var obj = new TextEntity()
+                {
+                    PlainText = name,
+                    Plane = plane,
+                    TextHeight = 1,
+                };
+
+                var c = obj.Explode();
+
+                curves.AddRange(c, new(0, DA.Iteration, i));
             }
 
             DA.SetDataTree(0, curves);

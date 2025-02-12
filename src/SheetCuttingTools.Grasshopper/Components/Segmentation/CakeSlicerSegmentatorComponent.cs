@@ -2,9 +2,11 @@
 using Grasshopper.Kernel.Types;
 using GrasshopperAsyncComponent;
 using Rhino.Geometry;
+using SheetCuttingTools.Abstractions.Contracts;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Grasshopper.Helpers;
 using SheetCuttingTools.Grasshopper.Models;
+using SheetCuttingTools.Grasshopper.Models.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,16 +22,22 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
 
         protected class CakeSlicerSegmentatorWorker(CakeSlicerSegmentatorComponent parent) : ToolWorker(parent)
         {
-            private Brep brep;
+            private IGeometryProvider geometry;
             private Plane cutPlane;
             private int numSegments;
-            private Segment[] segments;
+            private IGeometryProvider[] segments;
             private Brep[] planes;
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
                 try
                 {
+                    if (geometry is not BrepSegment brepSegment)
+                    {
+                        AddErrorMessage("Provided geometry is not a brep!");
+                        return;
+                    }
+                    Brep brep = brepSegment.Brep;
 
                     if (brep is null)
                         return;
@@ -76,68 +84,39 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
 
                         foreach (var split in curSplit)
                         {
-                            var brep = split.Trim(cb, 0.01);
+                            var splitBrep = split.Trim(cb, 0.01);
 
-                            brep = Brep.CreateBooleanUnion(brep, 0.01) ?? brep;
+                            splitBrep = Brep.CreateBooleanUnion(splitBrep, 0.01) ?? splitBrep;
                             if (brep is not null)
-                                all.AddRange(brep);
-                            //all.AddRange(x);
+                                all.AddRange(splitBrep);
                         }
                     }
+                    
 
-                    //for (int i = 0; i < splits; i++)
+                    List<IGeometryProvider> segments = [];
+
+                    segments.AddRange(all.Select(x => new BrepSegment(x)));
+
+                    //for (int i = 0; i < all.Count; i++)
                     //{
                     //    CancellationToken.ThrowIfCancellationRequested();
-                    //    var plane = Plane.CreateFromNormal(Point3d.Origin, Vector3d.YAxis);
 
-                    //    var splitter = new PlaneSurface(plane).ToBrep();
-                    //    splitter.Scale(width);
-                    //    splitter.Translate((bound.Center - Point3d.Origin) + (Vector3d.XAxis + Vector3d.ZAxis) * -width/2);
-                    //    splitter.Rotate(radPerSplit * i, Vector3d.ZAxis, bound.Center);
-                    //    planes[i] = splitter;
+                        
 
-                    //    List<Brep> next = [];
+                    //    var geo = Mesh.CreateFromBrep(all[i], MeshingParameters.QualityRenderMesh).Select(x => x.CreateGeometryProvider()).ToArray();
 
 
-                    //    var s1 = Plane.CreateFromNormal(bound.Center, Vector3d.YAxis);
-                    //    var s2 = Plane.CreateFromNormal(bound.Center, -Vector3d.YAxis);
-
-                    //    s1.Rotate(radPerSplit * i, Vector3d.ZAxis);
-                    //    s2.Rotate(radPerSplit * i, Vector3d.ZAxis);
-
-                    //    foreach(var split in curSplit)
+                    //    segments.AddRange(geo.Select(x => new Segment(x)
                     //    {
-                    //        split.
+                    //        Id = Guid.NewGuid(),
+                    //        Polygons = [.. x.Polygons]
+                    //    }));
 
-                    //        var x = split.Trim(s1, 0.01);
-                    //        var y = split.Trim(s2, 0.01);
-                    //        next.AddRange([..x, ..y]);
-                    //    }
-
-                    //    all.AddRange(next);
-
-                    //    curSplit = next;
+                    //    ReportProgress(Id, (1.0 / numSegments) * i);
                     //}
 
-                    List<Segment> segments = [];
-
-                    for (int i = 0; i < all.Count; i++)
-                    {
-                        CancellationToken.ThrowIfCancellationRequested();
-
-                        var geo = Mesh.CreateFromBrep(all[i], MeshingParameters.QualityRenderMesh).Select(x => x.CreateGeometryProvider()).ToArray();
-
-                        segments.AddRange(geo.Select(x => new Segment(x)
-                        {
-                            Id = Guid.NewGuid(),
-                            Polygons = [.. x.Polygons]
-                        }));
-
-                        ReportProgress(Id, (1.0 / numSegments) * i);
-                    }
-
                     this.segments = [.. segments];
-                    this.planes = planes.ToArray();
+                    this.planes = [.. planes];
                     Done();
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
@@ -151,7 +130,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
 
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
-                GH_Brep surface = new();
+                GH_ObjectWrapper surface = new();
                 if (!DA.GetData(0, ref surface))
                 {
                     AddErrorMessage("Missing geometry value");
@@ -172,14 +151,16 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
                     return;
                 }
 
-                brep = surface.Value;
+
+
+                geometry = surface.CreateGeometryProvider();
                 numSegments = segments.Value;
                 cutPlane = direction.Value;
             }
 
             public override void RegisterInputsParams(GH_InputParamManager pManager)
             {
-                pManager.AddBrepParameter("Model", "M", "The input geometry", GH_ParamAccess.item);
+                pManager.AddGenericParameter("Model", "M", "The input geometry", GH_ParamAccess.item);
                 pManager.AddIntegerParameter("Segments", "S", "The number of segments to make", GH_ParamAccess.item, 5);
                 pManager.AddPlaneParameter("Cut Plane", "C", "The plane to cut on, the model will be cut along the normal", GH_ParamAccess.item, Plane.WorldXY);
             }
@@ -187,7 +168,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
             public override void RegisterOutputParams(GH_OutputParamManager pManager)
             {
                 pManager.AddGenericParameter("Segments", "S", "The produced segments", GH_ParamAccess.list);
-                pManager.AddBrepParameter("PLanes", "P", "Planes used for cutting", GH_ParamAccess.list);
+                pManager.AddBrepParameter("Planes", "P", "Planes used for cutting", GH_ParamAccess.list);
             }
 
             public override void SetData(IGH_DataAccess DA)

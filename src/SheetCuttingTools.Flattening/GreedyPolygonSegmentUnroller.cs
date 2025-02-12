@@ -72,9 +72,7 @@ namespace SheetCuttingTools.Flattening
         private FlattenedSegmentBuilder CreateBuilder(IGeometryProvider segment, List<Polygon> polygons, MutableLookup<Edge, Polygon> neighbors)
         {
             var builder = new FlattenedSegmentBuilder(FlattenedSegmentConstraints);
-            var maxPoly = PolygonScorers.Length > 0
-                    ? polygons.MaxBy(x => PolygonScorers.Average(e => e.ScorePolygon(new PolygonScorerCandidate(x, segment))))
-                    : polygons.First();
+            var maxPoly = polygons.MaxByMany(PolygonScorers, segment);
 
             builder.InsertPolygon(in maxPoly, segment);
             polygons.Remove(maxPoly);
@@ -247,6 +245,7 @@ namespace SheetCuttingTools.Flattening
                     });
 
                     (HighPresVector2 a, HighPresVector2 b) = GetEdge(mapped);
+                    Boundary.Add((original, mapped));
                     Normals[mapped] = -GeometryMath.NormalToLine(center, a, b);
                     continue;
                 }

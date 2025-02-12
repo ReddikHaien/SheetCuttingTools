@@ -6,6 +6,7 @@ using SheetCuttingTools.Grasshopper.Helpers;
 using SheetCuttingTools.Infrastructure.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -55,6 +56,20 @@ namespace SheetCuttingTools.Grasshopper.Models
                 {
                     args.Pipeline.DrawPolyline(line, color);
                 }
+            }
+
+            var textColor = ColorHelper.GetColor("TextColor".GetHashCode());
+
+            foreach(var (edge, name) in Value.BoundaryNames)
+            {
+                var (a, b) = Value.FlattenedSegment.GetEdge(edge);
+                var p = (a + b) / 2;
+
+                var plane = Plane.WorldXY;
+
+                plane.Origin = p.ToPoint3f();
+
+                args.Pipeline.Draw3dText(name, textColor, plane, 1.0, "Calibri");
             }
         }
 

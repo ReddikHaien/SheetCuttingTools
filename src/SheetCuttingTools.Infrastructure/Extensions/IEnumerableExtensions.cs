@@ -1,4 +1,7 @@
-﻿using System;
+﻿using SheetCuttingTools.Abstractions.Behaviors;
+using SheetCuttingTools.Abstractions.Contracts;
+using SheetCuttingTools.Abstractions.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -39,6 +42,20 @@ namespace SheetCuttingTools.Infrastructure.Extensions
                 return (a(first.A, second.A), b(first.B, second.B));
             }
             return Enumerable.Aggregate(values.Select(x => (x, x)), aggregateFunc);
+        }
+
+        public static Polygon MaxByMany(this IEnumerable<Polygon> polygons, IReadOnlyList<IPolygonScorer> scorers, IGeometryProvider geometry)
+        {
+            if (scorers.Count == 0)
+                return polygons.First();
+
+            if (scorers.Count == 1)
+                return polygons.MaxBy(x => scorers[0].ScorePolygon(new(x, geometry)));
+
+            if (scorers.Count == 2)
+                return polygons.MaxBy(x => (scorers[0].ScorePolygon(new(x, geometry)), scorers[1].ScorePolygon(new(x, geometry))));
+
+            return polygons.MaxBy(x => scorers.Average(y => y.ScorePolygon(new(x, geometry))));
         }
     }
 }

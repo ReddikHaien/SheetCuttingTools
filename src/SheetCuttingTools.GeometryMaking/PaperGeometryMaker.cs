@@ -1,5 +1,7 @@
 ﻿using SheetCuttingTools.Abstractions.Models;
+using SheetCuttingTools.GeometryMaking.Models;
 using SheetCuttingTools.Infrastructure.Extensions;
+using SheetCuttingTools.Infrastructure.Math;
 using System.Numerics;
 
 namespace SheetCuttingTools.GeometryMaking
@@ -11,12 +13,15 @@ namespace SheetCuttingTools.GeometryMaking
         public const string MountainFold = "Paper.MountainFold";
         public const string GlueTap = "Paper.GlueTap";
 
-        public Sheet CreateSheet(FlattenedSegment segment)
+        public Sheet CreateSheet(FlattenedSegment segment, GeometryMakerContext context)
         {
-            HashSet<Edge> tapped = [];
+            //HashSet<Edge> tapped = [];
             Dictionary<Edge, Kind> edges = [];
+            Dictionary<Edge, string> names = [];
 
             var lookip = segment.Polygons.SelectMany(x => x.Placed.GetEdges().Zip(x.Original.GetEdges())).ToLookup(x => x.Second, x => x.First);
+
+            
 
             foreach(var group in lookip)
             {
@@ -29,14 +34,14 @@ namespace SheetCuttingTools.GeometryMaking
                         continue;
                     }
 
-                    if (tapped.Contains(original))
+                    if (context.EdgeProcessed(original))
                     {
                         edges[edge] = Kind.Cut;
                         continue;
                     }
 
                     edges[edge] = Kind.Tap;
-                    tapped.Add(original);
+                    context.MarkEdge(original);
                 }
             }
 
@@ -63,9 +68,7 @@ namespace SheetCuttingTools.GeometryMaking
 
             List<int[]> boundaryLines = [];
 
-            List<Edge> stack = segment.Polygons.SelectMany(x => x.Placed.GetEdges()).Where(x => edges[x] is Kind.Tap or Kind.Cut).Distinct().ToList();
-
-            var x = segment.Polygons[0].Placed.GetEdges().ToArray();
+            List<(Edge placed, Edge original)> stack = segment.Polygons.SelectMany(x => x.Placed.GetEdges().Zip(x.Original.GetEdges())).Where(x => edges[x.First] is Kind.Tap or Kind.Cut).ToList();
 
             while (stack.Count > 0)
             {
@@ -76,7 +79,7 @@ namespace SheetCuttingTools.GeometryMaking
                     found = false;
                     for (int i = 0; i < stack.Count; i++)
                     {
-                        Edge e = stack[i];
+                        (Edge e, Edge original) = stack[i];
                         if (line.Count == 0)
                         {
                             found = true;
@@ -108,6 +111,8 @@ namespace SheetCuttingTools.GeometryMaking
                             continue;
                         }
 
+                        names.Add(e, context.CreateName(original));
+
                         stack.RemoveAt(i);
                         i--;
                     }
@@ -119,9 +124,14 @@ namespace SheetCuttingTools.GeometryMaking
 
             foreach(var line in boundaryLines)
             {
+               
                 List<Vector2> boundaryLine = [];
+                List<(Edge, int)> taps = [];
                 foreach(var (a, b) in line.SlidingWindow())
                 {
+                    if (a == b)
+                        continue;
+
                     var edge = new Edge(a, b);
                     var (pa, pb) = segment.GetEdge(edge);
                    
@@ -130,25 +140,56 @@ namespace SheetCuttingTools.GeometryMaking
                         boundaryLine.Add(pa);
                     }
                   
-                    if (!edges.TryGetValue(edge, out Kind value) || value is Kind.Cut)
+                    if (edges.TryGetValue(edge, out Kind value) && value is Kind.Tap)
                     {
-                        boundaryLine.Add(pb);
+                        taps.Add((edge, boundaryLine.Count));
+                    }
+                    else if (value is Kind.Fold)
+                    {
                         continue;
                     }
-                    if (edges[edge] is Kind.Tap)
-                    {
-                        var u = pb - pa;
-                        var v = segment.Normals[edge];
 
-                        var p2 = v * 3 + u * 0.16f;
-                        var p3 = v * 3 + u * 0.84f;
-
-                        boundaryLine.AddRange([p2 + pa, p3 + pa, pb]);
-                    }
+                    boundaryLine.Add(pb);
                 }
 
-                if (line[0] == line[^1])
-                    boundaryLine.RemoveAt(boundaryLine.Count - 1);
+                //Work with the taps in reversse order to preserve their indices
+                taps.Reverse();
+
+                foreach(var (edge, index) in taps)
+                {
+                    var (pa, pb) = segment.GetEdge(edge);
+                    
+                    var u = pb - pa;
+                    var v = segment.Normals[edge];
+
+                    var p2 = v * 3 + u * 0.25f;
+                    var p3 = v * 3 + u * 0.75f;
+
+                    bool overlap = false;
+                    for (int i = 0; i < boundaryLine.Count - 1; i++)
+                    {
+                        int j = i + 1;
+                        var pc = boundaryLine[i];
+                        var pd = boundaryLine[j];
+
+                        if (GeometryMath.LineOverlap(pa, p2 + pa, pc, pd)
+                            || GeometryMath.LineOverlap(p2 + pa, p3 + pa, pc, pd)
+                            || GeometryMath.LineOverlap(p3 + pa, pb, pc, pd))
+                        {
+                            overlap = true;
+                            break;
+                        }
+                    }
+
+                    if (overlap)
+                    {
+                        edges[edge] = Kind.Cut;
+                    }
+                    else
+                    {
+                        boundaryLine.InsertRange(index, [p2 + pa, p3 + pa]);
+                    }
+                }
 
                 generatedBoundaryLines.Add([.. boundaryLine]);
             }
@@ -168,7 +209,8 @@ namespace SheetCuttingTools.GeometryMaking
                 Lines = generatedBoundaryLines
                     .Select(x => (Key: GlueTap, Value: x))
                     .Concat(foldLines.Select(x => (Key: ValleyFold, Value: x)))
-                .ToLookup(x => x.Key, x => x.Value)
+                .ToLookup(x => x.Key, x => x.Value),
+                BoundaryNames = names
             };
         }
 

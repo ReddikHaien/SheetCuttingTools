@@ -3,9 +3,11 @@ using Grasshopper.Kernel.Types;
 using GrasshopperAsyncComponent;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.GeometryMaking;
+using SheetCuttingTools.GeometryMaking.Models;
 using SheetCuttingTools.Grasshopper.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -22,8 +24,8 @@ public class PaperGeometryMakerComponent() : BaseGeometryMaker("Paper Geometry M
 
     protected class PaperGeometryMakerWorker(PaperGeometryMakerComponent parent) : ToolWorker(parent)
     {
-        FlattenedSegment segment;
-        Sheet sheet;
+        FlattenedSegment[] segment;
+        Sheet[] sheet;
 
         public override void DoWork(Action<string, double> ReportProgress, Action Done)
         {
@@ -33,7 +35,17 @@ public class PaperGeometryMakerComponent() : BaseGeometryMaker("Paper Geometry M
             try
             {
                 var maker = new PaperGeometryMaker();
-                sheet = maker.CreateSheet(segment);
+                var context = new GeometryMakerContext();
+                var l = segment.Length;
+                var i = 0;
+                List<Sheet> sheets = new(l);
+                foreach(var s in segment)
+                {
+                    sheets.Add(maker.CreateSheet(s, context));
+                    ReportProgress(Id, (1.0 / l) * i++);
+                }
+
+                sheet = [.. sheets];
                 Done();
             }
             catch(Exception e)
@@ -47,31 +59,30 @@ public class PaperGeometryMakerComponent() : BaseGeometryMaker("Paper Geometry M
 
         public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
         {
-            GH_ObjectWrapper segment = new();
-            if (!DA.GetData(0, ref segment))
+            List<GH_ObjectWrapper> segment = new();
+            if (!DA.GetDataList(0, segment))
             {
-                AddErrorMessage("Failed to get segment");
+                AddErrorMessage("Failed to get segments");
                 return;
             }
 
-            if (segment.Value is GH_FlattenedSegment ghflat)
+            if (!segment.All(x => x is not null && x.Value is GH_FlattenedSegment or FlattenedSegment))
             {
-                this.segment = ghflat.Value;
+                AddErrorMessage("Provided value is not all flat segments");
                 return;
             }
-            if (segment.Value is FlattenedSegment flat)
-            {
-                this.segment = flat;
-                return;
-            }
-            
-            AddErrorMessage("Provided value is not a flat segment!");
-            
+
+            this.segment = segment.Select(x => x.Value switch
+                {
+                    GH_FlattenedSegment f => f.Value,
+                    FlattenedSegment f => f,
+                    _ => throw new UnreachableException("Should be handeled above")
+                }).ToArray();
         }
 
         public override void RegisterInputsParams(GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Flattened Segment", "F", "The flattened segment to process", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Flattened Segment", "F", "The flattened segment to process", GH_ParamAccess.list);
         }
 
         public override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -81,7 +92,7 @@ public class PaperGeometryMakerComponent() : BaseGeometryMaker("Paper Geometry M
 
         public override void SetData(IGH_DataAccess DA)
         {
-            DA.SetData(0, new GH_Sheet(sheet));
+            DA.SetDataList(0, sheet.Select(x => new GH_Sheet(x)));
         }
     }
 }

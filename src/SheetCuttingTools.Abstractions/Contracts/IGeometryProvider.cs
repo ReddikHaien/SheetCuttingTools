@@ -1,10 +1,5 @@
 ﻿using SheetCuttingTools.Abstractions.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SheetCuttingTools.Abstractions.Contracts
 {
@@ -33,21 +28,40 @@ namespace SheetCuttingTools.Abstractions.Contracts
         /// </summary>
         /// <param name="edge">The edge to get vertices for.</param>
         /// <returns>A <see cref="ValueTuple{T1, T2}"/> of <see cref="Vector3"/>. </returns>
-        (Vector3 A, Vector3 B) GetVertices(Edge edge);
+        (Vector3 A, Vector3 B) GetVertices(Edge edge)
+            => (Vertices[edge.A], Vertices[edge.B]);
 
         /// <summary>
         /// Returns the normals for a polygon.
         /// </summary>
         /// <param name="polygon">The polygon to get normals for.</param>
         /// <returns>An array of <see cref="Vector3"/>.</returns>
-        Vector3[] GetNormals(Polygon polygon);
+        Vector3[] GetNormals(Polygon polygon)
+        {
+            var l = polygon.Points.Length;
+            var arr = new Vector3[l];
+            for (int i = 0; i < l; i++)
+            {
+                arr[i] = Normals[polygon.Points[i]];
+            }
+            return arr;
+        }
 
         /// <summary>
         /// Returns the points for a polygon.
         /// </summary>
         /// <param name="polygon">The polygon to get points for.</param>
         /// <returns>An array of <see cref="Vector3"/>.</returns>
-        Vector3[] GetVertices(Polygon polygon);
+        Vector3[] GetVertices(Polygon polygon)
+        {
+            var l = polygon.Points.Length;
+            var arr = new Vector3[l];
+            for (int i = 0; i < l; i++)
+            {
+                arr[i] = Vertices[polygon.Points[i]];
+            }
+            return arr;
+        }
 
         public Vector3 Center { get; set; }
     }

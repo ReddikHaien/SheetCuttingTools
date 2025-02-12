@@ -38,6 +38,21 @@ namespace SheetCuttingTools.Infrastructure.Math
             return (0.0001 < ua && ua < 0.999) && (0.0001 < ub && ub < 0.999);
         }
 
+        public static bool LineOverlap(Vector2 a, Vector2 b, Vector2 c, Vector2 d)
+        {
+            var x43 = d.X - c.X;
+            var y43 = d.Y - c.Y;
+            var x13 = a.X - c.X;
+            var y13 = a.Y - c.Y;
+            var x21 = b.X - a.X;
+            var y21 = b.Y - a.Y;
+
+            var ua = (x43 * y13 - y43 * x13) / (y43 * x21 - x43 * y21);
+            var ub = (x21 * y13 - y21 * x13) / (y43 * x21 - x43 * y21);
+
+            return (0.0001f < ua && ua < 0.999f) && (0.0001f < ub && ub < 0.999f);
+        }
+
         public static HighPresVector2 ComputeTrianglePoint(in HighPresVector2 anchorA, in HighPresVector2 anchorB, in HighPresVector2 normal, in HighPresVector3 triangleSides)
         {
             var ab = triangleSides.X;

@@ -18,5 +18,10 @@ namespace SheetCuttingTools.Abstractions.Models
         /// The lines in the sheet, grouped by their category.
         /// </summary>
         public ILookup<string, Vector2[]> Lines { get; set; }
+
+        /// <summary>
+        /// name of boundary edges, used to identity matching edges on different geometries
+        /// </summary>
+        public IReadOnlyDictionary<Edge, string> BoundaryNames {  get; set; }
     }
 }
