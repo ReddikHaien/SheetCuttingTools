@@ -83,8 +83,10 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
                 {
                     PlainText = name,
                     Plane = plane,
-                    TextHeight = 1,
+                    TextHeight = 3,
                 };
+
+                sheet.FlattenedSegment.
 
                 var c = obj.Explode();
 

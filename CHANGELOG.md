@@ -5,11 +5,27 @@ The project used [semantic versioning](https://semver.org/).
 ## Unreleased
 
 ### Added
- - N/A
+- Added Initial behavior project
+  - Added Behavior type `IEdgeFilter`
+    - Added filter for min edge length
+  - Added Behavior type `IPolygonScorer`
+    - Added scorer for distance from model center
+  - Added Behavior type `ISegmentationConstraint`
+    - Added constraint on segment dimension
+  - Added Behavior type `IFlattenedSegmentConstraint`
+    - Added constraint on self intersection
+
+- Added Initial unrolling project
+  - Added greedy unroller algorithm
+
+- Added Initial segmentation project
+  - Added Greedy segmentation algorithm
+  - Added Radial slicer algorithm
+
+- Added Initial geometry making project
+  - Added geometry making for paper based structures (glue taps)
 
 ### Changed
- - N/A
 
 ### Removed
- - N/A
 
