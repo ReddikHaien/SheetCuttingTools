@@ -27,7 +27,10 @@ namespace SheetCuttingTools.Grasshopper.Helpers
 
         public static Vector3 ToVector3(this Point3d point)
             => new((float)point.X, (float)point.Y, (float) point.Z);
-        
+
+        public static g3.Vector3d ToG3Vector3d(this Point3d point)
+            => new g3.Vector3d(point.X, point.Y, point.Z);
+
         public static Point3d ToPoint3d(this Vector3 point)
             => new(point.X, point.Y, point.Z);
 

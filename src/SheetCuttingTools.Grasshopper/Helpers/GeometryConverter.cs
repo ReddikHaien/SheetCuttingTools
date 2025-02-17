@@ -25,13 +25,12 @@ namespace SheetCuttingTools.Grasshopper.Helpers
                 GH_SubD s => s.Value.CreateGeometry(),
                 GH_Brep b => b.Value.CreateGeometry(),
                 
-
                 Mesh m => m.CreateGeometry(),
                 SubD s => s.CreateGeometry(),
                 Brep b => b.CreateGeometry(),
                 
                 IGeometry i => i,
-                GH_SegmentV2 i => i.Value,
+                GH_Geometry i => i.Value,
 
                 _ => throw new NotImplementedException("missing value")
             };
@@ -55,7 +54,10 @@ namespace SheetCuttingTools.Grasshopper.Helpers
 
         private static IGeometry CreateGeometry(this Mesh mesh)
         {
-            var builder = new DMesh3Builder();
+
+            var boundingBox = mesh.GetBoundingBox(true);
+
+            OctTree octree = new(boundingBox.Min.ToG3Vector3d(), boundingBox.Max.ToG3Vector3d(), 0.001);
 
             List<g3.Vector3d> verts = [];
             List<g3.Vector3f> normals = [];
@@ -65,22 +67,22 @@ namespace SheetCuttingTools.Grasshopper.Helpers
 
             mesh.MergeAllCoplanarFaces(0.0);
             
-            foreach(var bound in mesh.GetNgonAndFacesEnumerable())
+            foreach(var bound in mesh.GetNgons())
             {
-                int[] points = new int[bound.BoundaryVertexCount];
+                int[] points = new int[bound.Length];
                 int i = 0;
 
-                foreach (uint idx in bound.BoundaryVertexIndexList())
+                foreach (uint idx in bound)
                 {
                     if (!mapped.TryGetValue(idx, out var map))
                     {
                         var p = mesh.Vertices[(int)idx].ToG3Vector3d();
-                        var identical = verts.FindIndex(x => x.EpsilonEqual(p, 0.0001));
 
-                        if (identical == -1)
+                        if (!octree.GetValue(p, out var identical))
                         {
                             map = verts.Count;
                             verts.Add(p);
+                            octree.AddPoint(p, map);
                             normals.Add(mesh.Normals[(int)idx].ToG3Vector3f());
                             mergedPoints.Add(1);
                         }
@@ -113,6 +115,7 @@ namespace SheetCuttingTools.Grasshopper.Helpers
 
         private static IEnumerable<int[]> GetNgons(this Mesh mesh)
         {
+
             foreach (var ngon in mesh.GetNgonAndFacesEnumerable())
             {
                 var edges = ngon.FaceIndexList().Select(x => mesh.Faces[(int)x]).SelectMany<MeshFace, Edge>(x => {
@@ -183,37 +186,16 @@ namespace SheetCuttingTools.Grasshopper.Helpers
                 }
                 else
                 {
-
-                    if (bounds.Count == 2)
+                    //TODO: find a better way to create perfect ngons without holes.
+                    foreach (var faceIndex in ngon.FaceIndexList())
                     {
-                        // lists
-                        // 1, 2, 3, 4, 5
-                        // a, b, c, d, e
-                        // merged
-                        // 1, 2, 3, 4, 5, a, b, c, d, e
+                        var face = mesh.Faces[(int)faceIndex];
+                        int[] indices = face.IsQuad
+                            ? [face.A, face.B, face.C, face.D]
+                            : [face.A, face.B, face.C];
 
-                        var a = bounds[0][0];
-                        var pa = mesh.Vertices[a];
-
-                        int b = -1;
-                        float dist = float.MaxValue;
-                        foreach(var x in bounds[1])
-                        {
-                            var px = mesh.Vertices[b];
-                            var d = (pa - px).SquareLength;
-                            
-                            if (d > dist)
-                            {
-                                b = x;
-                                dist = d;
-                            }
-                        }
-
-                        var pb = mesh.Vertices[b];
-
-
+                        yield return indices;
                     }
-
                 }
             }
         }

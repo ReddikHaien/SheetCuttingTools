@@ -32,5 +32,10 @@ namespace SheetCuttingTools.Abstractions.Contracts
         /// The parent geometry.
         /// </summary>
         public IGeometry? Parent { get; }
+
+        /// <summary>
+        /// The center of the geometry
+        /// </summary>
+        public Vector3d Center3d { get; }
     }
 }

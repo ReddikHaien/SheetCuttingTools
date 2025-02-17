@@ -1,4 +1,5 @@
-﻿using SheetCuttingTools.Abstractions.Behaviors;
+﻿using g3;
+using SheetCuttingTools.Abstractions.Behaviors;
 using SheetCuttingTools.Infrastructure.Extensions;
 using System;
 using System.Collections.Generic;
@@ -13,9 +14,9 @@ namespace SheetCuttingTools.Behaviors.SegmentConstraints
     /// Ensures that a segment is kept within a specified size.
     /// </summary>
     /// <param name="dimensions">The maximum size of the segments</param>
-    public class SegmentDimensionConstraint(Vector3 dimensions) : ISegmentConstraint
+    public class SegmentDimensionConstraint(Vector3d dimensions) : ISegmentConstraint
     {
-        private readonly Vector3 dimensions = dimensions;
+        private readonly Vector3d dimensions = dimensions;
 
         public string Name()
             => "Behavior/SegmentConstraint/SegmentDimensionConstraint"; 
@@ -23,12 +24,12 @@ namespace SheetCuttingTools.Behaviors.SegmentConstraints
         public bool ValidateSegment(in SegmentCandidate candidate)
         {
             var seg = candidate.Segment;
-            (Vector3 min, Vector3 max) = candidate.Segment.Polygons
+            (Vector3d min, Vector3d max) = candidate.Segment.Polygons
                 .SelectMany(p => p.Points).Select(x => seg.Vertices[x])
-                .Aggregate(Vector3.Min, Vector3.Max);
+                .Aggregate(static (a, b) => a.Min(b), static (a, b) => a.Max(b));
             
-            var dim = Vector3.Abs(max - min);
-            return dim.X < dimensions.X && dim.Y < dimensions.Y && dim.Z < dimensions.Z;
+            var dim = (max - min).Abs;
+            return dim.x < dimensions.x && dim.y < dimensions.y && dim.z < dimensions.z;
         }
     }
 }

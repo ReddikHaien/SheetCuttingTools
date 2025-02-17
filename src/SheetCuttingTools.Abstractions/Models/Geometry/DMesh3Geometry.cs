@@ -21,6 +21,8 @@ namespace SheetCuttingTools.Abstractions.Models.Geometry
         public IReadOnlyList<Vector3f> Normals { get; } = new NormalsReader(mesh);
 
         public IGeometry? Parent { get; init; }
+
+        public Vector3d Center3d { get; } = mesh.GetBounds().Center;
     }
 
     internal readonly struct NormalsReader(DMesh3 mesh) : IReadOnlyList<Vector3f>

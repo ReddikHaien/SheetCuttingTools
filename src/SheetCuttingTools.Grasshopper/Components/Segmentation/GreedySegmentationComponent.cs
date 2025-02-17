@@ -8,6 +8,7 @@ using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Grasshopper.Helpers;
 using SheetCuttingTools.Grasshopper.Models;
 using SheetCuttingTools.Segmentation;
+using SheetCuttingTools.Segmentation.Segmentors;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -34,12 +35,12 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
             private static readonly string GeometryDescription = $"The input geometry, This value is expected to be a surface, mesh, '{typeof(Model).Name}', '{typeof(Segment).Name}' ";
             private static readonly string BehaviorDescription = $"The behaviors, Supported values are: \n{typeof(ISegmentConstraint).Name}\n{typeof(IEdgeFilter).Name}\n{typeof(IPolygonScorer).Name}";
 
-            private IGeometryProvider geometry;
+            private IGeometry geometry;
             private ISegmentConstraint[] segmentConstraints;
             private IEdgeFilter[] edgeFilters;
             private IPolygonScorer[] polygonScorers;
 
-            private Segment[] segments;
+            private IGeometry[] segments;
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
@@ -47,7 +48,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
                     return;
                 try
                 {
-                    var segmentor = new GreedySegmentator(polygonScorers, edgeFilters, segmentConstraints);
+                    var segmentor = new GreedySegmentor(polygonScorers, edgeFilters, segmentConstraints);
                     segments = segmentor.SegmentateModel(geometry, CancellationToken);
                     Done();
                 }catch(Exception e)
@@ -70,7 +71,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
                     return;
                 }
 
-                this.geometry = geometry.Value.CreateGeometryProvider();
+                this.geometry = geometry.Value.CreateGeometry();
 
                 List<GH_ObjectWrapper> behaviors = [];
 
@@ -129,7 +130,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
 
             public override void SetData(IGH_DataAccess DA)
             {
-                DA.SetDataList(0, segments.Select(x => new GH_Segment(x)));
+                DA.SetDataList(0, segments.Select(x => new GH_Geometry(x)));
             }
         }
     }

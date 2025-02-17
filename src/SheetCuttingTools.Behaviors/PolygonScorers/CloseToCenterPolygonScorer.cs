@@ -21,17 +21,17 @@ namespace SheetCuttingTools.Behaviors.PolygonScorers
         public string Name()
             => "Behavior/PolygonScorer/CloseToCenterPolygonScorer";
 
-        public float ScorePolygon(in PolygonScorerCandidate candidate)
+        public double ScorePolygon(in PolygonScorerCandidate candidate)
         {
             var s = candidate.Segment;
             var p = candidate.Polygon.Points;
             var l = p.Length;
 
-            var c = p.Select(x => s.Vertices[x]).Aggregate(Vector3.Add) / l;
+            var c = p.Select(x => s.Vertices[x]).Aggregate(static (a, b) => a + b) / l;
 
-            var d = Vector3.Distance(c, s.Center);
+            var d = c.Distance(s.Center3d);
 
-            return d == 0 ? float.MaxValue : 1.0f / d;
+            return d == 0 ? double.MaxValue : 1.0f / d;
         }
     }
 }

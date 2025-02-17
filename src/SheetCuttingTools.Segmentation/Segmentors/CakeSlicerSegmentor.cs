@@ -48,7 +48,15 @@ namespace SheetCuttingTools.Segmentation.Segmentors
                         if (polygon.Points[i] < 0)
                         {
                             var p = addedPoints[-polygon.Points[i] - 1];
-                            var index = newPoints.FindIndex(x => x.EpsilonEqual(p, 0.001));
+                            (var _, int index) = geometry.Vertices.Select((x, i) => (point: x, index: i)).FirstOrDefault(y => y.Item1.EpsilonEqual(p, 0.001), (Vector3d.Zero, -1));
+
+                            if (index >= 0)
+                            {
+                                mapped[i] = index;
+                                continue;
+                            }
+
+                            index = newPoints.FindIndex(x => x.EpsilonEqual(p, 0.001));
                             if (index < 0)
                             {
                                 newPoints.Add(p);
@@ -63,7 +71,12 @@ namespace SheetCuttingTools.Segmentation.Segmentors
                             mapped[i] = polygon.Points[i];
                         }
                     }
-                    polygonsInSegment.Add(new(mapped));
+
+                    var reduced = mapped.Distinct().ToArray();
+                    if (reduced.Length < 3)
+                        continue;
+
+                    polygonsInSegment.Add(new(reduced));
                 }
 
                 return new RawGeometry

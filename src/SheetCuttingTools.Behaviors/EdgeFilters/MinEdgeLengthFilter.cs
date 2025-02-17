@@ -1,4 +1,6 @@
-﻿using SheetCuttingTools.Abstractions.Behaviors;
+﻿using g3;
+using SheetCuttingTools.Abstractions.Behaviors;
+using SheetCuttingTools.Infrastructure.Extensions;
 using System.Numerics;
 
 namespace SheetCuttingTools.Behaviors.EdgeFilters
@@ -13,8 +15,8 @@ namespace SheetCuttingTools.Behaviors.EdgeFilters
 
         public bool FilterEdge(in EdgeFilterCandidate candidate)
         {
-            (Vector3 a, Vector3 b) = candidate.Model.GetVertices(candidate.Edge);
-            return Vector3.DistanceSquared(a, b) >= minEdgeLengthSquared;
+            (Vector3d a, Vector3d b) = candidate.Model.GetVertices(candidate.Edge);
+            return a.DistanceSquared(b) >= minEdgeLengthSquared;
         }
 
         public string Name()

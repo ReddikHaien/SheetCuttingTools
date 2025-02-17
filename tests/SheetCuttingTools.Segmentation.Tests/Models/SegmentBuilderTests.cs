@@ -1,4 +1,6 @@
-﻿using SheetCuttingTools.Abstractions.Models;
+﻿using g3;
+using SheetCuttingTools.Abstractions.Models;
+using SheetCuttingTools.Abstractions.Models.Geometry;
 using SheetCuttingTools.Segmentation.Models;
 using Shouldly;
 using System;
@@ -18,7 +20,7 @@ namespace SheetCuttingTools.Segmentation.Tests.Models
         public void UpdateBoundary_FirstPolygon_AddsEverythingInOrder()
         {
             // ARRANGE
-            Vector3[] verts =
+            Vector3d[] verts =
             [
                 new(0, 0, 0),
                 new(0, 1, 0),
@@ -26,7 +28,7 @@ namespace SheetCuttingTools.Segmentation.Tests.Models
                 new(0, 1, 1),
             ];
 
-            Vector3[] normals =
+            Vector3f[] normals =
             [
                 new(0, 1, 0),
                 new(0, 1, 0),
@@ -39,7 +41,12 @@ namespace SheetCuttingTools.Segmentation.Tests.Models
                 new([0, 1, 2, 3])
             ];
 
-            var model = new Model(verts, normals, polygons);
+            var model = new RawGeometry
+            {
+                Polygons = polygons,
+                Vertices = verts,
+                Normals = normals
+            };
             var builder = new SegmentBuilder(model, []);
 
             var polygon = new Polygon([0, 1, 2, 3]);
@@ -63,7 +70,7 @@ namespace SheetCuttingTools.Segmentation.Tests.Models
         public void UpdateBoundary_WithExistingBoundary_AddsEdgesInCorrectOrder()
         {
             // ARRANGE
-            Vector3[] verts =
+            Vector3d[] verts =
             [
                 new(0, 0, 0),
                 new(0, 1, 0),
@@ -71,7 +78,7 @@ namespace SheetCuttingTools.Segmentation.Tests.Models
                 new(0, 1, 1),
             ];
 
-            Vector3[] normals =
+            Vector3f[] normals =
             [
                 new(0, 1, 0),
                 new(0, 1, 0),
@@ -84,7 +91,12 @@ namespace SheetCuttingTools.Segmentation.Tests.Models
                 new([0, 1, 2, 3])
             ];
 
-            var model = new Model(verts, normals, polygons);
+            var model = new RawGeometry
+            {
+                Polygons = polygons,
+                Vertices = verts,
+                Normals = normals
+            };
             var builder = new SegmentBuilder(model, []);
 
             var polygon1 = new Polygon([0, 1, 2, 3]);

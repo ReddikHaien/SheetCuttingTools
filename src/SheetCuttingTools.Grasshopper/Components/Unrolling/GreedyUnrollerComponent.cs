@@ -27,12 +27,12 @@ namespace SheetCuttingTools.Grasshopper.Components.Unrolling
 
         protected class GreedyUnrollerWorker(GreedyUnrollerComponent parent) : ToolWorker(parent)
         {
-            private IGeometryProvider segment;
+            private IGeometry segment;
             private IEdgeFilter[] edgeFilters;
             private IFlattenedSegmentConstraint[] flattenedSegmentConstraints;
             private IPolygonScorer[] polygonScorers;
 
-            private FlattenedSegment[] flattened;
+            private IFlattenedGeometry[] flattened;
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
@@ -62,7 +62,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Unrolling
                     return;
                 }
 
-                this.segment = segment.Value.CreateGeometryProvider();
+                this.segment = segment.CreateGeometry();
 
 
                 List<GH_ObjectWrapper> behaviors = [];
@@ -110,7 +110,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Unrolling
 
             public override void SetData(IGH_DataAccess DA)
             {
-                DA.SetDataList(0, flattened.Select(x => new GH_FlattenedSegment(x)));
+                DA.SetDataList(0, flattened.Select(x => new GH_Geometry(x)));
             }
 
             public override void RegisterInputsParams(GH_InputParamManager pManager)

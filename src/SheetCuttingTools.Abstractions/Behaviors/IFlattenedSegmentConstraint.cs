@@ -1,4 +1,5 @@
-﻿using SheetCuttingTools.Abstractions.Contracts;
+﻿using g3;
+using SheetCuttingTools.Abstractions.Contracts;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Abstractions.Models.Numerics;
 using System;
@@ -28,12 +29,12 @@ namespace SheetCuttingTools.Abstractions.Behaviors
         /// <summary>
         /// The first anchor point for the <see cref="PlacedPolygon"/>.
         /// </summary>
-        public HighPresVector2 AnchorA { get; init; }
+        public Vector2d AnchorA { get; init; }
 
         /// <summary>
         /// The second anchor point for the <see cref="PlacedPolygon"/>.
         /// </summary>
-        public HighPresVector2 AnchorB { get; init; }
+        public Vector2d AnchorB { get; init; }
 
         /// <summary>
         /// The anchor edge for the <see cref="PlacedPolygon"/>.
@@ -43,7 +44,7 @@ namespace SheetCuttingTools.Abstractions.Behaviors
         /// <summary>
         /// Points belonging to the <see cref="PlacedPolygon"/>.
         /// </summary>
-        public (int Index, HighPresVector2 Point)[] GeneratedPoints { get; init; }
+        public (int Index, Vector2d Point)[] GeneratedPoints { get; init; }
 
         /// <summary>
         /// The polygon being placed.
@@ -53,17 +54,16 @@ namespace SheetCuttingTools.Abstractions.Behaviors
         /// <summary>
         /// Parent segment being flattened
         /// </summary>
-        public IGeometryProvider Segment { get; init; }
+        public IGeometry Segment { get; init; }
 
         /// <summary>
         /// Points already flattened.
         /// </summary>
-        public IReadOnlyList<HighPresVector2> FlattenedPoints { get; init; }
+        public IReadOnlyList<Vector2d> FlattenedPoints { get; init; }
 
         /// <summary>
         /// The boundary of the flattened segment.
         /// </summary>
-        public IEnumerable<(Edge Original, Edge Placed)> Boundary { get; init; }
-        
+        public IEnumerable<(Edge Original, Edge Placed)> Boundary { get; init; }   
     }
 }

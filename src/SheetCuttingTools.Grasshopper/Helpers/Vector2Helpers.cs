@@ -12,5 +12,8 @@ namespace SheetCuttingTools.Grasshopper.Helpers
     {
         public static Point3f ToPoint3f(this Vector2 vector, float z = 0.0f)
             => new(vector.X, vector.Y, z);
+
+        public static Point3d ToRhinoPoint3d(this g3.Vector2d vector, double z = 0.0)
+            => new(vector.x, vector.y, z);
     }
 }

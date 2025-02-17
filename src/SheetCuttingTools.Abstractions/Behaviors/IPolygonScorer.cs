@@ -18,7 +18,7 @@ namespace SheetCuttingTools.Abstractions.Behaviors
         /// </summary>
         /// <param name="candidate">context for the polygon to be scored.</param>
         /// <returns>A <see cref="float"/>.</returns>
-        float ScorePolygon(in PolygonScorerCandidate candidate);
+        double ScorePolygon(in PolygonScorerCandidate candidate);
     }
 
     /// <summary>
@@ -26,7 +26,7 @@ namespace SheetCuttingTools.Abstractions.Behaviors
     /// </summary>
     /// <param name="polygon">The polygon to score.</param>
     /// <param name="model">The model.</param>
-    public readonly struct PolygonScorerCandidate(Polygon polygon, IGeometryProvider model)
+    public readonly struct PolygonScorerCandidate(Polygon polygon, IGeometry model)
     {
         /// <summary>
         /// The polygon to be scored.
@@ -36,6 +36,6 @@ namespace SheetCuttingTools.Abstractions.Behaviors
         /// <summary>
         /// The parent model.
         /// </summary>
-        public IGeometryProvider Segment { get; } = model;
+        public IGeometry Segment { get; } = model;
     }
 }

@@ -44,7 +44,7 @@ namespace SheetCuttingTools.Infrastructure.Extensions
             return Enumerable.Aggregate(values.Select(x => (x, x)), aggregateFunc);
         }
 
-        public static Polygon MaxByMany(this IEnumerable<Polygon> polygons, IReadOnlyList<IPolygonScorer> scorers, IGeometryProvider geometry)
+        public static Polygon MaxByMany(this IEnumerable<Polygon> polygons, IReadOnlyList<IPolygonScorer> scorers, IGeometry geometry)
         {
             if (scorers.Count == 0)
                 return polygons.First();

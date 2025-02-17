@@ -1,19 +1,20 @@
-﻿using SheetCuttingTools.Abstractions.Behaviors;
+﻿using g3;
+using SheetCuttingTools.Abstractions.Behaviors;
 using SheetCuttingTools.Abstractions.Contracts;
 using SheetCuttingTools.Abstractions.Models;
+using SheetCuttingTools.Abstractions.Models.Geometry;
 using SheetCuttingTools.Infrastructure.Math;
-using System.Numerics;
 
 namespace SheetCuttingTools.Segmentation.Models
 {
     /// <summary>
     /// Segment builder class
     /// </summary>
-    /// <param name="model"></param>
+    /// <param name="parent"></param>
     /// <param name="constraints"></param>
-    public class SegmentBuilder(IGeometryProvider model, ISegmentConstraint[] constraints) : IGeometryProvider
+    public class SegmentBuilder(IGeometry parent, ISegmentConstraint[] constraints) : IGeometry
     {
-        public IGeometryProvider Model { get; } = model;
+        public IGeometry Parent { get; } = parent;
 
         public ISegmentConstraint[] Constraints { get; } = constraints;
 
@@ -27,7 +28,7 @@ namespace SheetCuttingTools.Segmentation.Models
 
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        public Vector3 Center { get; set; } = Vector3.Zero;
+        public Vector3d Center3d { get; set; } = Vector3d.Zero;
 
         public bool AddPolygon(Polygon polygon, Edge commonEdge)
         {
@@ -45,11 +46,11 @@ namespace SheetCuttingTools.Segmentation.Models
 
             var toAdd = polygon.Points.Where(x => !AddedPoints.Contains(x)).ToArray();
 
-            if(toAdd.Length > 0)
+            if (toAdd.Length > 0)
             {
-                Center *= AddedPoints.Count;
-                Center += toAdd.Select(x => Model.Vertices[x]).Aggregate(Vector3.Add);
-                Center /= AddedPoints.Count + toAdd.Length;
+                Center3d *= AddedPoints.Count;
+                Center3d += toAdd.Select(x => Parent.Vertices[x]).Aggregate((a, b) => a + b);
+                Center3d /= AddedPoints.Count + toAdd.Length;
             }
 
             foreach (var x in toAdd)
@@ -82,27 +83,19 @@ namespace SheetCuttingTools.Segmentation.Models
             }
         }
 
-        public Segment ToSegment(Segment? segment)
-            => new(Model)
+        public IGeometry ToSegment(IGeometry? segment)
+            => new RawGeometry
             {
-                Id = Id,
-                Parent = segment,
+                Parent = segment ?? Parent,
+                Normals = Parent.Normals,
+                Vertices = Parent.Vertices,
                 Polygons = [.. Polygons],
             };
 
-        IReadOnlyList<Polygon> IGeometryProvider.Polygons => Polygons;
+        IReadOnlyList<Polygon> IGeometry.Polygons => Polygons;
 
-        IReadOnlyList<Vector3> IGeometryProvider.Vertices => Model.Vertices;
+        IReadOnlyList<Vector3d> IGeometry.Vertices => Parent.Vertices;
 
-        IReadOnlyList<Vector3> IGeometryProvider.Normals => Model.Normals;
-
-        (Vector3 A, Vector3 B) IGeometryProvider.GetVertices(Edge edge)
-            => Model.GetVertices(edge);
-
-        Vector3[] IGeometryProvider.GetNormals(Polygon polygon)
-            => Model.GetNormals(polygon);
-
-        Vector3[] IGeometryProvider.GetVertices(Polygon polygon)
-            => Model.GetVertices(polygon);
+        IReadOnlyList<Vector3f> IGeometry.Normals => Parent.Normals;
     }
 }

@@ -32,8 +32,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
                 try
                 {
                     var segmentor = new CakeSlicerSegmentor();
-                    //var segments = segmentor.SegmentGeometry(geometry, 4, g3.Vector3d.Zero, g3.Vector3d.AxisZ, g3.Vector3d.AxisX, CancellationToken).Result;
-                    result = [geometry];
+                    result = segmentor.SegmentGeometry(geometry, 4, g3.Vector3d.Zero, g3.Vector3d.AxisZ, g3.Vector3d.AxisX, CancellationToken).Result;
                     Done();
                 }
                 catch(Exception e) when(e is not (TaskCanceledException or OperationCanceledException))
@@ -71,7 +70,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
 
             public override void SetData(IGH_DataAccess DA)
             {
-                DA.SetDataList(0, result.Select(x => new GH_SegmentV2(x)));
+                DA.SetDataList(0, result.Select(x => new GH_Geometry(x)));
             }
         }
     }

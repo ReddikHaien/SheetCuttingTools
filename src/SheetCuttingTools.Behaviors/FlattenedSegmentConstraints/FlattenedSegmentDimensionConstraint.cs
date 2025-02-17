@@ -1,4 +1,5 @@
-﻿using SheetCuttingTools.Abstractions.Behaviors;
+﻿using g3;
+using SheetCuttingTools.Abstractions.Behaviors;
 using SheetCuttingTools.Abstractions.Models.Numerics;
 using SheetCuttingTools.Infrastructure.Extensions;
 using System;
@@ -17,12 +18,12 @@ namespace SheetCuttingTools.Behaviors.FlattenedSegmentConstraints
 
         public bool ValidateFlatSegment(in FlattenedSegmentCandidate candidate)
         {
-            (HighPresVector2 min, HighPresVector2 max) = candidate.FlattenedPoints
+            (Vector2d min, Vector2d max) = candidate.FlattenedPoints
                 .Concat(candidate.GeneratedPoints.Select(x => x.Point))
-                .Aggregate(HighPresVector2.Min, HighPresVector2.Max);
+                .Aggregate(static (a, b) => a.Min(b), static (a, b) => a.Max(b));
 
             var dist = max - min;
-            return dist.X < width && dist.Y < height;
+            return dist.x < width && dist.y < height || dist.x < height && dist.y < width;
         }
     }
 }

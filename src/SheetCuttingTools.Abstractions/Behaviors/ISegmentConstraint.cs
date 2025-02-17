@@ -22,7 +22,7 @@ namespace SheetCuttingTools.Abstractions.Behaviors
 
     }
 
-    public readonly struct SegmentCandidate(Guid id, IReadOnlyList<Polygon> polygons, IGeometryProvider segment)
+    public readonly struct SegmentCandidate(Guid id, IReadOnlyList<Polygon> polygons, IGeometry segment)
     {
         /// <summary>
         /// The segment id.
@@ -37,6 +37,6 @@ namespace SheetCuttingTools.Abstractions.Behaviors
         /// <summary>
         /// The parent model.
         /// </summary>
-        public IGeometryProvider Segment { get; } = segment;
+        public IGeometry Segment { get; } = segment;
     }
 }

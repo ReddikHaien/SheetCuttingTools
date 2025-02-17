@@ -23,7 +23,7 @@ namespace SheetCuttingTools.Abstractions.Behaviors
     /// </summary>
     /// <param name="edge">The edge to test.</param>
     /// <param name="model">The parent model.</param>
-    public readonly struct EdgeFilterCandidate(Edge edge, IGeometryProvider model)
+    public readonly struct EdgeFilterCandidate(Edge edge, IGeometry model)
     {
         /// <summary>
         /// The edge to test.
@@ -33,6 +33,6 @@ namespace SheetCuttingTools.Abstractions.Behaviors
         /// <summary>
         /// The parent model.
         /// </summary>
-        public IGeometryProvider Model { get; } = model;
+        public IGeometry Model { get; } = model;
     }
 }

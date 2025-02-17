@@ -97,32 +97,32 @@ namespace SheetCuttingTools.Infrastructure.Math
             return true;
         }
 
-        public static HighPresVector2 NormalToLine(HighPresVector2 point, HighPresVector2 p1, HighPresVector2 p2)
+        public static Vector2d NormalToLine(Vector2d point, Vector2d p1, Vector2d p2)
         {
-            var d = HighPresVector2.Distance(p2, p1);
+            var d = p2.Distance(p1);
             if (d == 0)
             {
                 return point - p2;
             }
 
-            var projected = p1 + (HighPresVector2.Dot(point - p1, p2 - p1) / HighPresVector2.DistanceSquared(p2, p1)) * (p2 - p1);
-            return HighPresVector2.Normalize(point - projected);
+            var projected = p1 + (point - p1).Dot(p2 - p1) / p2.DistanceSquared(p1) * (p2 - p1);
+            return (point - projected).Normalized;
         }
 
         public static Vector2 NormalToLine(Vector2 point, Vector2 p1, Vector2 p2)
         {
-            var projected = p1 + (Vector2.Dot(point - p1, p2 - p1) / Vector2.DistanceSquared(p2, p1)) * (p2 - p1);
+            var projected = p1 + Vector2.Dot(point - p1, p2 - p1) / Vector2.DistanceSquared(p2, p1) * (p2 - p1);
             return Vector2.Normalize(point - projected);
         }
 
-        public static bool LineOverlap(HighPresVector2 a, HighPresVector2 b, HighPresVector2 c, HighPresVector2 d)
+        public static bool LineOverlap(Vector2d a, Vector2d b, Vector2d c, Vector2d d)
         {
-            var x43 = d.X - c.X;
-            var y43 = d.Y - c.Y;
-            var x13 = a.X - c.X;
-            var y13 = a.Y - c.Y;
-            var x21 = b.X - a.X;
-            var y21 = b.Y - a.Y;
+            var x43 = d.x - c.x;
+            var y43 = d.y - c.y;
+            var x13 = a.x - c.x;
+            var y13 = a.y - c.y;
+            var x21 = b.x - a.x;
+            var y21 = b.y - a.y;
 
             var ua = (x43 * y13 - y43 * x13) / (y43 * x21 - x43 * y21);
             var ub = (x21 * y13 - y21 * x13) / (y43 * x21 - x43 * y21);
@@ -145,19 +145,14 @@ namespace SheetCuttingTools.Infrastructure.Math
             return (0.0001f < ua && ua < 0.999f) && (0.0001f < ub && ub < 0.999f);
         }
 
-        public static HighPresVector2 ComputeTrianglePoint(in HighPresVector2 anchorA, in HighPresVector2 anchorB, in HighPresVector2 normal, in HighPresVector3 triangleSides)
+        public static Vector2d ComputeTrianglePoint(in Vector2d anchorA, in Vector2d anchorB, in Vector2d normal, in Vector3d triangleSides)
         {
-            if (HighPresVector2.IsNaN(normal))
-            {
+            var ab = triangleSides.x;
+            var bc = triangleSides.y;
+            var ac = triangleSides.z;
 
-            }
-
-            var ab = triangleSides.X;
-            var bc = triangleSides.Y;
-            var ac = triangleSides.Z;
-
-            var diffx = anchorB.X - anchorA.X;
-            var diffy = anchorB.Y - anchorA.Y;
+            var diffx = anchorB.x - anchorA.x;
+            var diffy = anchorB.y - anchorA.y;
 
             var l = (ac * ac - bc * bc + ab * ab) / (2 * ab);
 
@@ -171,40 +166,40 @@ namespace SheetCuttingTools.Infrastructure.Math
             var ld = l / ab;
             var hd = h / ab;
 
-            var x1 = ld * diffx + hd * diffy + anchorA.X;
-            var x2 = ld * diffx - hd * diffy + anchorA.X;
+            var x1 = ld * diffx + hd * diffy + anchorA.x;
+            var x2 = ld * diffx - hd * diffy + anchorA.x;
 
-            var y1 = ld * diffy - hd * diffx + anchorA.Y;
-            var y2 = ld * diffy + hd * diffx + anchorA.Y;
+            var y1 = ld * diffy - hd * diffx + anchorA.y;
+            var y2 = ld * diffy + hd * diffx + anchorA.y;
 
-            var c1 = new HighPresVector2((double)x1, (double)y1);
-            var c2 = new HighPresVector2((double)x2, (double)y2);
+            var c1 = new Vector2d((double)x1, (double)y1);
+            var c2 = new Vector2d((double)x2, (double)y2);
 
             //no need to check the normal if the points are the same.
             if (System.Math.Abs(x1 - x2) < double.Epsilon && System.Math.Abs(y1 - y2) < double.Epsilon)
             {
                 if (ac > bc)
                 {
-                    var n = HighPresVector2.Normalize(anchorB - anchorA);
+                    var n = (anchorB - anchorA).Normalized;
                     var newp = (n * bc) + anchorB;
                     return newp;
                 }
                 else
                 {
-                    var n = HighPresVector2.Normalize(anchorA - anchorB);
+                    var n = (anchorA - anchorB).Normalized;
                     var newp = (n * ac) + anchorA;
                     return newp;
                 }
             }
 
-            var d1 = HighPresVector2.Dot(NormalToLine(c1, anchorA, anchorB), normal);
-            var d2 = HighPresVector2.Dot(NormalToLine(c2, anchorA, anchorB), normal);
+            var d1 = NormalToLine(c1, anchorA, anchorB).Dot(normal);
+            var d2 = NormalToLine(c2, anchorA, anchorB).Dot(normal);
 
-            if (HighPresVector2.Dot(NormalToLine(c1, anchorA, anchorB), normal) >= 0)
+            if (d1 >= 0)
             {
                 return c1;
             }
-            else if (HighPresVector2.Dot(NormalToLine(c2, anchorA, anchorB), normal) >= 0)
+            else if (d2 >= 0)
             {
                 return c2;
             }
