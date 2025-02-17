@@ -23,16 +23,25 @@ namespace SheetCuttingTools.Behaviors.FlattenedSegmentConstraints
                 var pa = candidate.GeneratedPoints.First(x => x.Index == edge.A).Point;
                 var pb = candidate.GeneratedPoints.First(x => x.Index == edge.B).Point;
 
-                foreach(var (original, placed) in candidate.Boundary)
+                var flattened = candidate.FlattenedPoints;
+
+                var tasks = candidate.Boundary.Chunk(1024).Select(bound => Task.Run(() =>
                 {
-                    var pc = candidate.FlattenedPoints[placed.A];
-                    var pd = candidate.FlattenedPoints[placed.B];
+                    foreach (var (original, placed) in bound)
+                    {
+                        var pc = flattened[placed.A];
+                        var pd = flattened[placed.B];
 
-                    if (GeometryMath.LineOverlap(pa, pb, pc, pd))
-                        return false;
-                }
+                        if (GeometryMath.LineOverlap(pa, pb, pc, pd))
+                            return false;
+                    }
+                    return true;
+                })).ToArray();
+
+                var result = Task.WhenAll(tasks).Result.All(x => x);
+                if (!result)
+                    return false;
             }
-
             return true;
         }
     }
