@@ -9,14 +9,17 @@ using SheetCuttingTools.Grasshopper.Models;
 using SheetCuttingTools.Grasshopper.Models.Internal;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace SheetCuttingTools.Grasshopper.Components.Segmentation
 {
     [Guid("9E6E4E4A-724C-45C3-B5C3-46966AECEA7C")]
-    public class CakeSlicerSegmentatorComponent() : BaseSegmentator("CakeSlicerSegmentator", "CSS", "Segments a geometry using radial slicing")
+    public class CakeSlicerSegmentatorComponent() : BaseSegmentator("Cake slicer segmentator", "CSS", "Segments a geometry using radial slicing")
     {
+        protected override Bitmap Icon => Icons.Segmentation_CakeSlicerSegmentor;
+
         protected override ToolWorker CreateWorker()
             => new CakeSlicerSegmentatorWorker(this);
 
@@ -54,12 +57,11 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
 
                     var planes = new List<Brep>();
 
-
                     var zaxis = cutPlane.ZAxis;
                     var yaxis = cutPlane.YAxis;
                     var xaxis = cutPlane.XAxis;
 
-                    var plane = new Plane(Point3d.Origin, xaxis, yaxis);
+                    var plane = new Plane(cutPlane.Origin, xaxis, yaxis);
 
                     for (int i = 0; i < numSegments; i++)
                     {

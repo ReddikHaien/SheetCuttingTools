@@ -1,18 +1,110 @@
-﻿using SheetCuttingTools.Abstractions.Models.Numerics;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
+﻿using g3;
+using SheetCuttingTools.Abstractions.Contracts;
+using SheetCuttingTools.Abstractions.Models;
+using SheetCuttingTools.Abstractions.Models.Numerics;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SheetCuttingTools.Infrastructure.Math
 {
     public static class GeometryMath
     {
+
+        //    f f b b b f
+        //    0  1  2  3  4  5
+        // 0: 0  1  2  3  4  5
+        // 1: 0  1  2  3  4  5
+        // 2: 0  1  6  3  4  5
+        // 3: 0  1  6  -1 4  5
+        // 4: 0  1  6  -1 7  5
+        // 5: 0  1  6  -1 7  5
+
+        /// <summary>
+        /// https://en.wikipedia.org/wiki/Sutherland%E2%80%93Hodgman_algorithm
+        /// </summary>
+        /// <param name="polygon"></param>
+        /// <param name="geometry"></param>
+        /// <param name="planes"></param>
+        /// <returns></returns>
+        public static (Polygon, Vector3d[]) CutPolygon(Polygon polygon, IGeometry geometry, params Plane3d[] planes)
+        {
+            List<int> points = [.. polygon.Points];
+            List<Vector3d> added = [];
+
+            foreach (var plane in planes)
+            {
+                List<int> l = [.. points];
+                List<Vector3d> a = [.. added];
+                points.Clear();
+                added.Clear();
+
+                for (int i = 0; i < l.Count; i++)
+                {
+                    int j = (i + l.Count - 1) % l.Count;
+
+                    Vector3d prev = l[j] < 0 ? a[-l[j] - 1] : geometry.Vertices[l[j]];
+                    Vector3d current = l[i] < 0 ? a[-l[i] - 1] : geometry.Vertices[l[i]];
+
+                    GeometryMath.PointOnPlane(plane, current, prev, out var intersectionPoint);
+
+                    bool currentRight = plane.WhichSide(current) >= 0;
+                    bool prevRight = plane.WhichSide(prev) >= 0;
+
+                    if (currentRight)
+                    {
+                        if (!prevRight)
+                        {
+                            added.Add(intersectionPoint);
+                            points.Add(-added.Count);
+                        }
+
+                        if (l[i] < 0)
+                        {
+                            added.Add(current);
+                            points.Add(-added.Count);
+                        }
+                        else
+                        {
+                            points.Add(l[i]);
+                        }
+                    }
+                    else if (prevRight)
+                    {
+                        added.Add(intersectionPoint);
+                        points.Add(-added.Count);
+
+                    }
+                }
+            }
+
+            int[] mapped = [.. points];
+
+            return (new Polygon(mapped), [.. added]);
+        }
+
+        public static bool PointOnPlane(Plane3d plane3, Vector3d a, Vector3d b, out Vector3d pointOnPlane)
+        {
+            pointOnPlane = default;
+
+            var u = b - a;
+            var denom = plane3.Normal.Dot(u);
+            if (denom == 0)
+            {
+                return false;
+            }
+
+            double t = (plane3.Constant - plane3.Normal.Dot(a)) / denom;
+            pointOnPlane = a + u * t;
+            return true;
+        }
+
         public static HighPresVector2 NormalToLine(HighPresVector2 point, HighPresVector2 p1, HighPresVector2 p2)
         {
+            var d = HighPresVector2.Distance(p2, p1);
+            if (d == 0)
+            {
+                return point - p2;
+            }
+
             var projected = p1 + (HighPresVector2.Dot(point - p1, p2 - p1) / HighPresVector2.DistanceSquared(p2, p1)) * (p2 - p1);
             return HighPresVector2.Normalize(point - projected);
         }
@@ -55,6 +147,11 @@ namespace SheetCuttingTools.Infrastructure.Math
 
         public static HighPresVector2 ComputeTrianglePoint(in HighPresVector2 anchorA, in HighPresVector2 anchorB, in HighPresVector2 normal, in HighPresVector3 triangleSides)
         {
+            if (HighPresVector2.IsNaN(normal))
+            {
+
+            }
+
             var ab = triangleSides.X;
             var bc = triangleSides.Y;
             var ac = triangleSides.Z;
@@ -66,7 +163,7 @@ namespace SheetCuttingTools.Infrastructure.Math
 
             var q = ac * ac - l * l;
 
-            if (q < 0 && q > -0.01)
+            if (q < 0)
                 q = 0;
 
             var h = System.Math.Sqrt(q);
@@ -99,6 +196,9 @@ namespace SheetCuttingTools.Infrastructure.Math
                     return newp;
                 }
             }
+
+            var d1 = HighPresVector2.Dot(NormalToLine(c1, anchorA, anchorB), normal);
+            var d2 = HighPresVector2.Dot(NormalToLine(c2, anchorA, anchorB), normal);
 
             if (HighPresVector2.Dot(NormalToLine(c1, anchorA, anchorB), normal) >= 0)
             {
@@ -133,7 +233,7 @@ namespace SheetCuttingTools.Infrastructure.Math
             var diffy = anchorB.Y - anchorA.Y;
 
             var l = (ac * ac - bc * bc + ab * ab) / (2 * ab);
-            var h = System.Math.Sqrt(ac*ac - l*l);
+            var h = System.Math.Sqrt(ac * ac - l * l);
 
             var ld = l / ab;
             var hd = h / ab;
@@ -159,7 +259,7 @@ namespace SheetCuttingTools.Infrastructure.Math
             {
                 return c2;
             }
-            else 
+            else
             {
                 throw new InvalidOperationException("Failed to find a suitable point");
             }

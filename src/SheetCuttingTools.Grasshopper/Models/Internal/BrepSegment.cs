@@ -24,7 +24,7 @@ namespace SheetCuttingTools.Grasshopper.Models.Internal
             {
                 combined.Append(m);
             }
-            combined.Weld(Math.PI*2);
+            combined.Weld(Math.PI);
             return combined.CreateGeometryProvider();
             
         }, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);

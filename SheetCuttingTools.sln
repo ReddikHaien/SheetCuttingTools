@@ -21,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{9FDD2A1E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SheetCuttingTools.GeometryMaking", "src\SheetCuttingTools.GeometryMaking\SheetCuttingTools.GeometryMaking.csproj", "{0EA8098D-BCCB-4825-924C-1DBDED047107}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SheetCuttingTools.Infrastructure.Tests", "tests\SheetCuttingTools.Infrastructure.Tests\SheetCuttingTools.Infrastructure.Tests.csproj", "{296DD610-8D63-41D3-A134-79D9D84A1403}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,11 +61,16 @@ Global
 		{0EA8098D-BCCB-4825-924C-1DBDED047107}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0EA8098D-BCCB-4825-924C-1DBDED047107}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0EA8098D-BCCB-4825-924C-1DBDED047107}.Release|Any CPU.Build.0 = Release|Any CPU
+		{296DD610-8D63-41D3-A134-79D9D84A1403}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{296DD610-8D63-41D3-A134-79D9D84A1403}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{296DD610-8D63-41D3-A134-79D9D84A1403}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{296DD610-8D63-41D3-A134-79D9D84A1403}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{78BC08E6-ABE2-4033-A391-235F3A8A002E} = {9FDD2A1E-C509-49AF-AA40-AF839872CB68}
+		{296DD610-8D63-41D3-A134-79D9D84A1403} = {9FDD2A1E-C509-49AF-AA40-AF839872CB68}
 	EndGlobalSection
 EndGlobal

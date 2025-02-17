@@ -13,19 +13,20 @@ namespace SheetCuttingTools.Grasshopper.Models
 {
     public class GH_FlattenedSegment : GH_Goo<FlattenedSegment>, IGH_PreviewData
     {
-        public GH_FlattenedSegment(FlattenedSegment segment) : this(segment, () => CreateSheetMesh(segment))
+        public GH_FlattenedSegment(FlattenedSegment segment) : this(segment, () => CreateFlatCurves(segment))
         { }
 
         private GH_FlattenedSegment(FlattenedSegment segment, Func<ReadOnlyCollection<Polyline>> meshMaker) : base(segment)
         {
             this.segment = segment;
-            mesh = new Lazy<ReadOnlyCollection<Polyline>>(meshMaker, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
+            curves = new Lazy<ReadOnlyCollection<Polyline>>(meshMaker, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
         private readonly FlattenedSegment segment;
-        private readonly Lazy<ReadOnlyCollection<Polyline>> mesh;
+        private readonly Lazy<ReadOnlyCollection<Polyline>> curves;
+        private readonly Lazy<Displayable> mesh;
 
-        public ReadOnlyCollection<Polyline> Mesh => mesh.Value;
+        public ReadOnlyCollection<Polyline> Mesh => curves.Value;
 
         public BoundingBox ClippingBox => Mesh.Select(x => x.BoundingBox).Aggregate(BoundingBox.Union);
 
@@ -54,7 +55,7 @@ namespace SheetCuttingTools.Grasshopper.Models
         public override string ToString()
             => $"Flattened Segment, polys: {segment.Polygons.Length}, points: {segment.Points.Length}";
 
-        private static ReadOnlyCollection<Polyline> CreateSheetMesh(FlattenedSegment segment)
+        private static ReadOnlyCollection<Polyline> CreateFlatCurves(FlattenedSegment segment)
         {
             var curves = new List<Polyline>();
 

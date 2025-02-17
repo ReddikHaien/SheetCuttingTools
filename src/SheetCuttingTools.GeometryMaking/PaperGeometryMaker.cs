@@ -22,7 +22,6 @@ namespace SheetCuttingTools.GeometryMaking
             var lookip = segment.Polygons.SelectMany(x => x.Placed.GetEdges().Zip(x.Original.GetEdges())).ToLookup(x => x.Second, x => x.First);
 
             
-
             foreach(var group in lookip)
             {
                 var original = group.Key;

@@ -24,6 +24,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
             "GS",
             "A greedy segmentation algorithm that builds segments 'first-come-first-serve' style")
     {
+        protected override Bitmap Icon => Icons.Segmentation_GreedySegmentor;
 
         protected override ToolWorker CreateWorker()
             => new GreedySegmentationWorker(this);

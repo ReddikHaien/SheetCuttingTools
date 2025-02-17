@@ -39,6 +39,9 @@ namespace SheetCuttingTools.Abstractions.Models.Numerics
         public static bool EpsilonEquals(HighPresVector2 a, HighPresVector2 b)
             => DistanceSquared(a, b) < 0.001;
 
+        public static bool IsNaN(HighPresVector2 vector)
+            => double.IsNaN(vector.X) || double.IsNaN(vector.Y);
+
         public static double DistanceSquared(HighPresVector2 left, HighPresVector2 right)
         {
             var x = (left.X - right.X);
@@ -54,6 +57,12 @@ namespace SheetCuttingTools.Abstractions.Models.Numerics
             var l = vector.Length;
             return new(vector.X / l, vector.Y / l);
         }
+
+        public static HighPresVector2 Min(HighPresVector2 a, HighPresVector2 b)
+            => new HighPresVector2(Math.Min(a.X, b.X), Math.Min(a.Y, b.Y));
+
+        public static HighPresVector2 Max(HighPresVector2 a, HighPresVector2 b)
+            => new HighPresVector2(Math.Max(a.X, b.X), Math.Max(a.Y, b.Y));
 
         public override string ToString()
             => $"{X}, {Y}";

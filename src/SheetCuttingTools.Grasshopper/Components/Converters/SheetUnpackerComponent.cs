@@ -73,7 +73,9 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
             foreach(var (edge, name) in sheet.BoundaryNames)
             {
                 var (a, b) = sheet.FlattenedSegment.GetEdge(edge);
-                var p = (a + b) / 2;
+                var normal = sheet.FlattenedSegment.Normals[edge];
+                
+                var p = (a + b) / 2 - normal;
 
                 var plane = Plane.WorldXY;
 
@@ -85,8 +87,6 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
                     Plane = plane,
                     TextHeight = 3,
                 };
-
-                sheet.FlattenedSegment.
 
                 var c = obj.Explode();
 

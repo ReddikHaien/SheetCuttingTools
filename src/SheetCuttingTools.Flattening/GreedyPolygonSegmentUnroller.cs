@@ -246,7 +246,12 @@ namespace SheetCuttingTools.Flattening
 
                     (HighPresVector2 a, HighPresVector2 b) = GetEdge(mapped);
                     Boundary.Add((original, mapped));
-                    Normals[mapped] = -GeometryMath.NormalToLine(center, a, b);
+                    var n = -GeometryMath.NormalToLine(center, a, b);
+                    if (HighPresVector2.IsNaN(n))
+                    {
+
+                    }
+                    Normals[mapped] = n;
                     continue;
                 }
 
@@ -254,7 +259,12 @@ namespace SheetCuttingTools.Flattening
                 {
                     Boundary.Add((original, mapped));
                     (HighPresVector2 a, HighPresVector2 b) = GetEdge(mapped);
-                    Normals.TryAdd(mapped, -GeometryMath.NormalToLine(center, a, b));
+                    var n = -GeometryMath.NormalToLine(center, a, b);
+                    Normals.TryAdd(mapped, n);
+                    if (HighPresVector2.IsNaN(n))
+                    {
+
+                    }
                 }
                 else
                 {

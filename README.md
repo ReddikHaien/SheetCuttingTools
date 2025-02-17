@@ -1,18 +1,59 @@
 # Introduction
-This is the component library for sheet cutting.
+This is an library & grasshopper plugin for sheet cutting. 
 
 # Structure
 The lilbrary is structured into the following parts
 ```mermaid
-flowchart TD
-M([Model])
-A[Segmentation]
-B[Geometry making]
-C((Behaviour))
-D([Sheet instructions])
-M --> A -->B --> D
-C-.->A & B
+flowchart RL
+subgraph Actions
+    direction TB
+    M([Model])
+    A[Segmentation]
+    B[Flattening]
+    C[Geometry making]
+    E([Sheet instructions])
+    M --> A --> B --> C --> E
+end
+
+subgraph Behaviors
+    direction TB
+    B1[Edge Filters]
+    B2[Segmentation Constraints]
+    B3[Flattened Segmentation Constraints]
+    B4[Polygon Scorers]
+    B1 ~~~ B2 ~~~ B3 ~~~ B4
+end
+Behaviors --> Actions
 ```
+
+`Actions` are components that act directly upon the input models. They are grouped into three categories.
+1. Segmentation
+2. Flattening
+3. Geometry making
+
+Actions can be modified by providing them with `Behaviors`. Behaviors are components that provides additional information to Action components. Current behaviour kinds are
+1. Edge filters
+2. Polygon scorers
+3. Segmentation constraints
+4. Flattened segmentation constriants
+
+
+## Actions
+### Segmentation
+The segmentation components are responsible for creating a rough segmentation of a model. This can also be done using the flattening components. But serves as a simpler method of creating smaller segments before flattening them out. E.g. radially dividing a vase, or constraint a segmentation to only produce convex segments. The segmentation components are designed to be nested
+
+#### Greedy segmentator
+The greedy segmentator is a "first-come-first-served" based polygon segmentation algorithm. It tries to expand a segment as long as all constraints are fulfilled. It starts on a new segment once it can't extend a segment anymore. This segmentation component produces large, uneven sheets, though can work Ok on simpler geometry.
+
+#### Cake slicer segmentator
+The cake slicer segmentator is a segmentation component that divides a component radially into even segments (Like a cake!)
+
+### Flattening
+The flattening components are responsible for converting models/segments into 2D representations that can be folded back into the original shape. How a shape is flattened out is based on the specific component, e.g. the greedy flattener produces large and uneven segments, while a different implementation might produce a better result.
+
+### Geometry Making
+
+Geometry making components are responsible for producing the final result that can be fed into a sheet cutter. These components uses flattened segments, and based on the componets/behaviors, produced geometry suited for different kinds of materials. E.g. the Paper geometry maker is more suited for thin foldable materials (like paper).
 
 The main modules are Segmentation and the Geometry making. Segmentation converts the input model into segments that can be further processed. Geometry making is not currently implemented, but will be responsible for producing geometry that is fit for sheet cutting. Some examples of geometry making's responsibility is lattice hinges, integral joints, locking mechanism, etc...
 

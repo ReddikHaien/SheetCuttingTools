@@ -3,15 +3,12 @@ using Grasshopper.Kernel.Types;
 using Rhino.Display;
 using Rhino.Geometry;
 using SheetCuttingTools.Abstractions.Contracts;
-using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Grasshopper.Helpers;
 using SheetCuttingTools.Grasshopper.Models.Internal;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Numerics;
-using System.Windows.Forms;
 
 namespace SheetCuttingTools.Grasshopper.Models
 {
@@ -19,7 +16,7 @@ namespace SheetCuttingTools.Grasshopper.Models
     {
         private readonly Lazy<Displayable> mesh;
 
-        private GH_Segment(IGeometryProvider segment, Func<Displayable> meshmaker): base(segment)
+        private GH_Segment(IGeometryProvider segment, Func<Displayable> meshmaker) : base(segment)
         {
             mesh = new(meshmaker, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
         }
@@ -144,47 +141,47 @@ namespace SheetCuttingTools.Grasshopper.Models
             mesh.Faces.AddFaces(faces);
             colors.ForEach(x => mesh.VertexColors.Add(x));
             normals.ForEach(x => mesh.Normals.Add(x));
-        
+
             return new Displayable.DisplayableMesh(mesh);
         }
-        internal abstract record Displayable
+    }
+    internal abstract record Displayable
+    {
+        public abstract void DrawMesh(GH_PreviewMeshArgs args);
+
+        public abstract BoundingBox GetBoundingBox();
+
+        public abstract bool IsValid();
+
+        public record DisplayableMesh(Mesh Mesh) : Displayable
         {
-            public abstract void DrawMesh(GH_PreviewMeshArgs args);
-
-            public abstract BoundingBox GetBoundingBox();
-
-            public abstract bool IsValid();
-
-            public record DisplayableMesh(Mesh Mesh) : Displayable
+            public override void DrawMesh(GH_PreviewMeshArgs args)
             {
-                public override void DrawMesh(GH_PreviewMeshArgs args)
-                {
-                    args.Pipeline.DrawMeshFalseColors(Mesh);
-                }
-
-                public override BoundingBox GetBoundingBox()
-                    => Mesh.GetBoundingBox(true);
-
-                public override bool IsValid()
-                    => Mesh.IsValid;
+                args.Pipeline.DrawMeshFalseColors(Mesh);
             }
 
-            public record DisplayableBrep(Brep Brep) : Displayable
+            public override BoundingBox GetBoundingBox()
+                => Mesh.GetBoundingBox(true);
+
+            public override bool IsValid()
+                => Mesh.IsValid;
+        }
+
+        public record DisplayableBrep(Brep Brep) : Displayable
+        {
+            public override void DrawMesh(GH_PreviewMeshArgs args)
             {
-                public override void DrawMesh(GH_PreviewMeshArgs args)
+                args.Pipeline.DrawBrepShaded(Brep, new DisplayMaterial
                 {
-                    args.Pipeline.DrawBrepShaded(Brep, new DisplayMaterial
-                    {
-                        Diffuse = ColorHelper.GetColor(Brep.GetHashCode())
-                    });
-                }
-
-                public override BoundingBox GetBoundingBox()
-                    => Brep.GetBoundingBox(true);
-
-                public override bool IsValid()
-                    => Brep.IsValid;
+                    Diffuse = ColorHelper.GetColor(Brep.GetHashCode())
+                });
             }
+
+            public override BoundingBox GetBoundingBox()
+                => Brep.GetBoundingBox(true);
+
+            public override bool IsValid()
+                => Brep.IsValid;
         }
     }
 
