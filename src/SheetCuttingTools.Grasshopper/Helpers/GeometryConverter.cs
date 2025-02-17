@@ -218,10 +218,7 @@ namespace SheetCuttingTools.Grasshopper.Helpers
             }
         }
 
-        private static IEnumerable<int[]> GetIndicesForNGon(MeshNgon ngon, Mesh mesh)
-        {
-            
-        }
+        
 
         public static IGeometryProvider CreateGeometryProvider(this object value)
             => value switch
