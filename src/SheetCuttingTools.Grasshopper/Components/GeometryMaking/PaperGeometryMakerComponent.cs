@@ -1,6 +1,7 @@
 ﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 using GrasshopperAsyncComponent;
+using SheetCuttingTools.Abstractions.Contracts;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.GeometryMaking;
 using SheetCuttingTools.GeometryMaking.Models;
@@ -24,7 +25,7 @@ public class PaperGeometryMakerComponent() : BaseGeometryMaker("Paper Geometry M
 
     protected class PaperGeometryMakerWorker(PaperGeometryMakerComponent parent) : ToolWorker(parent)
     {
-        FlattenedSegment[] segment;
+        IFlattenedGeometry[] segment;
         Sheet[] sheet;
 
         public override void DoWork(Action<string, double> ReportProgress, Action Done)
@@ -66,7 +67,7 @@ public class PaperGeometryMakerComponent() : BaseGeometryMaker("Paper Geometry M
                 return;
             }
 
-            if (!segment.All(x => x is not null && x.Value is GH_FlattenedSegment or FlattenedSegment))
+            if (!segment.All(x => x is not null && x.Value is GH_Geometry or IFlattenedGeometry))
             {
                 AddErrorMessage("Provided value is not all flat segments");
                 return;
@@ -74,10 +75,15 @@ public class PaperGeometryMakerComponent() : BaseGeometryMaker("Paper Geometry M
 
             this.segment = segment.Select(x => x.Value switch
                 {
-                    GH_FlattenedSegment f => f.Value,
-                    FlattenedSegment f => f,
+                    GH_Geometry f => f.Value as IFlattenedGeometry,
+                    IFlattenedGeometry f => f,
                     _ => throw new UnreachableException("Should be handeled above")
                 }).ToArray();
+
+            if (segment.Any(x => x is null))
+            {
+                throw new InvalidOperationException("Non flattened geometry provided");
+            }
         }
 
         public override void RegisterInputsParams(GH_InputParamManager pManager)

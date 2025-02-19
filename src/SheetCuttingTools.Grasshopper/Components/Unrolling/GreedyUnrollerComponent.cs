@@ -7,6 +7,7 @@ using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Flattening;
 using SheetCuttingTools.Grasshopper.Helpers;
 using SheetCuttingTools.Grasshopper.Models;
+using SheetCuttingTools.Infrastructure.Progress;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -40,7 +41,8 @@ namespace SheetCuttingTools.Grasshopper.Components.Unrolling
                     return;
                 try
                 {
-                    var unroller = new GreedyPolygonSegmentUnroller(flattenedSegmentConstraints, polygonScorers, edgeFilters);
+                    var progress = new ToolProgress(Id, ReportProgress);
+                    var unroller = new GreedyPolygonSegmentUnroller(flattenedSegmentConstraints, polygonScorers, edgeFilters, progress);
                     flattened = unroller.FlattenSegment(segment, CancellationToken);
                     Done();
                 }

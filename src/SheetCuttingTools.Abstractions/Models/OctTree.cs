@@ -4,8 +4,10 @@ namespace SheetCuttingTools.Abstractions.Models
 {
     public class OctTree(Vector3d min, Vector3d max, double epsilon)
     {
-        private readonly double epsilon = epsilon;
         private readonly Node root = new Node.Branch(new Node.Leaf(min, max, epsilon));
+
+
+        public int Count => root.Count;
 
         public bool AddPoint(Vector3d point, int value)
             => root.AddPoint(point, value);
@@ -32,6 +34,8 @@ namespace SheetCuttingTools.Abstractions.Models
             public abstract bool Contains(Vector3d point);
 
             public abstract bool GetValue(Vector3d point, out int value);
+
+            public abstract int Count { get; }
 
             public Node(Vector3d min, Vector3d max, double epsilon)
             {
@@ -66,11 +70,13 @@ namespace SheetCuttingTools.Abstractions.Models
 
                     nodes = offsets.Select(x => new Leaf(Min + x, Center + x, epsilon) as Node).ToArray();
 
-                    foreach(var (p, val) in leaf.Points)
+                    foreach (var (p, val) in leaf.Points)
                     {
                         AddPoint(p, val);
                     }
                 }
+
+                public override int Count => nodes.Sum(x => x.Count);
 
                 public override bool AddPoint(Vector3d point, int value)
                 {
@@ -88,7 +94,7 @@ namespace SheetCuttingTools.Abstractions.Models
                             return false;
                         }
                         node = new Branch(leaf);
-                        nodes[index] = node;        
+                        nodes[index] = node;
                     }
 
                     return node.AddPoint(point, value);
@@ -132,10 +138,10 @@ namespace SheetCuttingTools.Abstractions.Models
 
                 public IEnumerable<(Vector3d, int)> Points => points;
 
-                public Leaf(Vector3d min, Vector3d max, double epsilon) : base(min, max, epsilon)
-                {
+                public override int Count => points.Count;
 
-                }
+                public Leaf(Vector3d min, Vector3d max, double epsilon) : base(min, max, epsilon)
+                { }
 
                 public override bool AddPoint(Vector3d point, int value)
                 {
@@ -152,8 +158,8 @@ namespace SheetCuttingTools.Abstractions.Models
                 public override bool GetValue(Vector3d point, out int value)
                 {
                     value = -1;
-                    
-                    foreach(var p in points)
+
+                    foreach (var p in points)
                     {
                         if (p.Point.EpsilonEqual(point, epsilon))
                         {

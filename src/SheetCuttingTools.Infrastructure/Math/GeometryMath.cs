@@ -97,6 +97,12 @@ namespace SheetCuttingTools.Infrastructure.Math
             return true;
         }
 
+        public static Vector3d VectorToLine(Vector3d point, Vector3d p1, Vector3d p2)
+        {
+            var projected = p1 + (point - p1).Dot(p2 - p1) / p2.DistanceSquared(p1) * (p2 - p1);
+            return projected - point;
+        }
+
         public static Vector2d NormalToLine(Vector2d point, Vector2d p1, Vector2d p2)
         {
             var d = p2.Distance(p1);

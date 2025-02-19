@@ -7,6 +7,7 @@ using Rhino.Geometry;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Grasshopper.Helpers;
 using SheetCuttingTools.Grasshopper.Models;
+using SheetCuttingTools.Infrastructure.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,7 +64,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
                 {
                     var path = new GH_Path(0, DA.Iteration, i);
                     var poly = new Polyline(line.Length);
-                    poly.AddRange(line.Select(x => (Point3d)x.ToPoint3f()));
+                    poly.AddRange(line.Select(x => x.ToRhinoPoint3d()));
                     curves.Add(poly.ToPolylineCurve(), path);
                 }
                 i++;
@@ -72,14 +73,14 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
             categories.Add("EdgeLabels");
             foreach(var (edge, name) in sheet.BoundaryNames)
             {
-                var (a, b) = sheet.FlattenedSegment.GetEdge(edge);
-                var normal = sheet.FlattenedSegment.Normals[edge];
+                var (a, b) = sheet.FlattenedSegment.GetPoints(edge);
+                var normal = sheet.FlattenedSegment.BoundaryNormal[edge];
                 
                 var p = (a + b) / 2 - normal;
 
                 var plane = Plane.WorldXY;
 
-                plane.Origin = p.ToPoint3f();
+                plane.Origin = p.ToRhinoPoint3d();
 
                 var obj = new TextEntity()
                 {

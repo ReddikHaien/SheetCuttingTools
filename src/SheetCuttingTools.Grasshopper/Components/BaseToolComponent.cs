@@ -43,6 +43,5 @@ namespace SheetCuttingTools.Grasshopper.Components
             public void AddErrorMessage(string message)
                 => Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, message);
         }
-
     }
 }

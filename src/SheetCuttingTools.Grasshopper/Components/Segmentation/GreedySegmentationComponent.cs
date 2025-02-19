@@ -7,6 +7,7 @@ using SheetCuttingTools.Abstractions.Contracts;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Grasshopper.Helpers;
 using SheetCuttingTools.Grasshopper.Models;
+using SheetCuttingTools.Infrastructure.Progress;
 using SheetCuttingTools.Segmentation;
 using SheetCuttingTools.Segmentation.Segmentors;
 using System;
@@ -48,7 +49,8 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
                     return;
                 try
                 {
-                    var segmentor = new GreedySegmentor(polygonScorers, edgeFilters, segmentConstraints);
+                    var progress = new ToolProgress(Id, ReportProgress);
+                    var segmentor = new GreedySegmentor(polygonScorers, edgeFilters, segmentConstraints, progress);
                     segments = segmentor.SegmentateModel(geometry, CancellationToken);
                     Done();
                 }catch(Exception e)

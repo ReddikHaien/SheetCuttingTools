@@ -3,112 +3,20 @@ using SheetCuttingTools.Abstractions.Behaviors;
 using SheetCuttingTools.Abstractions.Contracts;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Abstractions.Models.FlatGeometry;
-using SheetCuttingTools.Abstractions.Models.Numerics;
 using SheetCuttingTools.Infrastructure.Extensions;
 using SheetCuttingTools.Infrastructure.Math;
-using System.Collections.ObjectModel;
-using System.Numerics;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace SheetCuttingTools.Flattening
+namespace SheetCuttingTools.Flattening.Builder
 {
-    /// <summary>
-    /// A greedy flattener that flattens segments based on their polygons.
-    /// </summary>
-    /// <param name="flattenedSegmentConstraints"></param>
-    /// <param name="polygonScorers"></param>
-    public class GreedyPolygonSegmentUnroller(IFlattenedSegmentConstraint[] flattenedSegmentConstraints, IPolygonScorer[] polygonScorers, IEdgeFilter[] edgeFilters, IProgress<double> progress)
+    internal class FlattenedGeometryBuilder(IGeometry geometry, IFlattenedSegmentConstraint[] flattenedSegmentConstraints)
     {
-        private readonly IProgress<double> progress = progress;
-
-        public IFlattenedSegmentConstraint[] FlattenedSegmentConstraints { get; } = flattenedSegmentConstraints;
-        public IPolygonScorer[] PolygonScorers { get; } = polygonScorers;
-        public IEdgeFilter[] EdgeFilters { get; } = edgeFilters;
-
-        public IFlattenedGeometry[] FlattenSegment(IGeometry segment, CancellationToken cancellationToken = default)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (segment.Polygons.Count == 0)
-                return [];
-
-            List<IFlattenedGeometry> segments = [];
-
-            var polys = segment.Polygons.ToList();
-            var neighbors = CreateNeighborList(segment);
-
-            var builder = CreateBuilder(segment, polys, neighbors);
-
-            double total = polys.Count;
-
-            while (polys.Count > 0)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                bool found = false;
-                var edges = builder.Edges
-                    .Where(x => EdgeFilters.Length == 0 || EdgeFilters.All(y => y.FilterEdge(new(x, segment))))
-                    .ToArray();
-
-                foreach (var edge in edges)
-                {
-                    var neighboringPolygons = neighbors[edge];
-                    if (neighboringPolygons.Count == 0)
-                        continue;
-
-                    var polygon = neighboringPolygons[0];
-                    if (builder.InsertPolygon(in polygon, segment))
-                    {
-                        polys.Remove(polygon);
-                        RemoveNeighbors(in polygon, neighbors);
-                        found = true;
-                    }
-                }
-
-                if (!found)
-                {
-                    segments.Add(builder.ToFlattenedSegment(segment));
-                    builder = CreateBuilder(segment, polys, neighbors);
-                }
-
-                double processed = 1.0 - polys.Count / total;
-                progress.Report(processed);
-            }
-
-            if (builder.Polygons.Count > 0)
-                segments.Add(builder.ToFlattenedSegment(segment));
-
-            return [.. segments];
-        }
-
-        private FlattenedSegmentBuilder CreateBuilder(IGeometry segment, List<Polygon> polygons, MutableLookup<Edge, Polygon> neighbors)
-        {
-            var builder = new FlattenedSegmentBuilder(FlattenedSegmentConstraints);
-            var maxPoly = polygons.MaxByMany(PolygonScorers, segment);
-
-            builder.InsertPolygon(in maxPoly, segment);
-            polygons.Remove(maxPoly);
-            RemoveNeighbors(maxPoly, neighbors);
-
-            return builder;
-        }
-
-        private static void RemoveNeighbors(in Polygon polygon, MutableLookup<Edge, Polygon> neighbors)
-        {
-            foreach (var edge in polygon.GetEdges())
-            {
-                neighbors.RemoveElement(edge, polygon);
-            }
-        }
-
-        private static MutableLookup<Edge, Polygon> CreateNeighborList(IGeometry segment)
-            => new(segment.Polygons
-                .SelectMany(x => x
-                    .GetEdges()
-                    .Select(e => (edge: e, poly: x)))
-                .ToLookup(x => x.edge, x => x.poly));
-    }
-
-    public class FlattenedSegmentBuilder(IFlattenedSegmentConstraint[] flattenedSegmentConstraints)
-    {
+        private readonly IGeometry geometry = geometry;
         private readonly IFlattenedSegmentConstraint[] flattenedSegmentConstraints = flattenedSegmentConstraints;
 
         public Dictionary<Edge, OpenEdgeEntry> OpenEdges { get; set; } = [];
@@ -123,9 +31,7 @@ namespace SheetCuttingTools.Flattening
 
         public List<(Polygon Original, Polygon Placed)> Polygons { get; set; } = [];
 
-        public IEnumerable<Edge> Edges => OpenEdges.Values.Where(x => x.Valid).Select(x => x.Original);
-
-        public bool InsertPolygon(in Polygon polygon, IGeometry segment)
+        public bool AddPolygon(Polygon polygon)
         {
             var polygonEdges = polygon.GetEdges().ToArray();
             var numEdges = polygonEdges.Length;
@@ -141,14 +47,14 @@ namespace SheetCuttingTools.Flattening
             {
                 polygonEdges = ArrayTransform.RotateEdgeArray(polygonEdges, edgeEntry.Original);
                 originalEdge = polygonEdges[0];
-                (actualA, actualB) = segment.GetVertices(originalEdge);
+                (actualA, actualB) = geometry.GetVertices(originalEdge);
                 (anchorA, anchorB) = GetEdge(anchorEdge);
                 normal = Normals[anchorEdge];
             }
             else
             {
                 originalEdge = polygonEdges[0];
-                (actualA, actualB) = segment.GetVertices(originalEdge);
+                (actualA, actualB) = geometry.GetVertices(originalEdge);
                 anchorA = new(0, 0);
                 anchorB = new(actualA.Distance(actualB), 0);
                 Points.AddRange([anchorA, anchorB]);
@@ -168,7 +74,7 @@ namespace SheetCuttingTools.Flattening
             {
                 var edge = polygonEdges[i];
 
-                var p = segment.Vertices[edge.B];
+                var p = geometry.Vertices[edge.B];
 
                 // X: ab, Y: bc, C: ac
                 var triangleSides = new Vector3d(
@@ -190,7 +96,7 @@ namespace SheetCuttingTools.Flattening
                     AnchorEdge = anchorEdge,
                     GeneratedPoints = constructedPoints,
                     PlacedPolygon = polygon,
-                    Segment = segment,
+                    Segment = geometry,
                     FlattenedPoints = Points,
                     Boundary = Boundary
                 };
@@ -218,9 +124,9 @@ namespace SheetCuttingTools.Flattening
             for (int i = 2; i < indexWhenPlaced.Length; i++)
             {
                 int original = constructedPoints[i].Item1;
-                
+
                 bool found = false;
-                foreach(var candidate in Mappings[original])
+                foreach (var candidate in Mappings[original])
                 {
                     if (Points[candidate].EpsilonEqual(constructedPoints[i].Item2, 0.01))
                     {
@@ -232,7 +138,7 @@ namespace SheetCuttingTools.Flattening
 
                 if (found)
                     continue;
-                
+
                 Points.Add(constructedPoints[i].Item2);
 
                 Mappings.Add(original, Points.Count - 1);
@@ -279,7 +185,7 @@ namespace SheetCuttingTools.Flattening
                     Placed = value.Placed,
                     Valid = false
                 };
-                
+
             }
 
             int[] mappedPoints = new int[polygon.Points.Length];
@@ -296,50 +202,19 @@ namespace SheetCuttingTools.Flattening
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (Vector2d A, Vector2d B) GetEdge(Edge edge)
-            => (Points[edge.A], Points[edge.B]);
+           => (Points[edge.A], Points[edge.B]);
 
-        public IFlattenedGeometry ToFlattenedSegment(IGeometry geometry)
-        {
-            ReadOnlyCollection<Vector2d> points = Points.ToArray().AsReadOnly();
-            var center2d = points.Aggregate(static (a, b) => a + b) / points.Count;
 
-            var polygons = new CollectionMapper<(Polygon Original, Polygon Placed), Polygon>(Polygons.AsReadOnly(), p => p.Original);
-
-            var p = polygons.SelectMany(x => x.Points).Distinct().Select(x => geometry.Vertices[x]).ToArray();
-
-            var center3d = p.Aggregate(static (a, b) => a + b) / p.Length;
-
-            return new RawFlatGeometry()
+        public IFlattenedGeometry ToFlattenedGeometry()
+            => new RawFlatGeometry
             {
-                Points = points,
-                BoundaryNormal = Normals.ToDictionary(x => x.Key, x => x.Value),
-                PlacedPolygons = [.. Polygons],
-
-                Polygons = polygons,
-
-                Vertices = geometry.Vertices,
-                Normals = geometry.Normals,
-
                 Parent = geometry,
+                Vertices = geometry.Vertices,
+                PlacedPolygons = Polygons.ToArray().AsReadOnly(),
+                Polygons = new CollectionMapper<(Polygon Original, Polygon Placed), Polygon>(Polygons.AsReadOnly(), p => p.Original),
+                BoundaryNormal = Normals,
+                Normals = geometry.Normals,
+                Points = Points.ToArray().AsReadOnly()
             };
-        }
-    }
-
-    public readonly struct OpenEdgeEntry
-    {
-        /// <summary>
-        /// The corresponding edge in the placed.
-        /// </summary>
-        public Edge Placed { get; init; }
-
-        /// <summary>
-        /// The edge from the input segment.
-        /// </summary>
-        public Edge Original { get; init; }
-
-        /// <summary>
-        /// Wether this edge can be built upon.
-        /// </summary>
-        public bool Valid { get; init; }
     }
 }

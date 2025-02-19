@@ -5,6 +5,67 @@ namespace SheetCuttingTools.Infrastructure.Math
     public static class ArrayTransform
     {
         /// <summary>
+        /// Converts an unoreded array of edges into consecutives lines of points.
+        /// </summary>
+        /// <param name="edgeList"></param>
+        /// <returns></returns>
+        public static int[][] CreateEdgeLoops(Edge[] edgeList)
+        {
+            List<Edge> boundEdges = [.. edgeList];
+
+            List<int[]> bounds = [];
+            while (boundEdges.Count > 0)
+            {
+                List<int> curBound = [];
+                bool found = true;
+                while (found)
+                {
+                    found = false;
+                    for (int i = 0; i < boundEdges.Count; i++)
+                    {
+                        var edge = boundEdges[i];
+
+                        if (curBound.Count == 0)
+                        {
+                            curBound.Add(edge.A);
+                            curBound.Add(edge.B);
+                        }
+                        else if (curBound[^1] == edge.A)
+                        {
+                            curBound.Add(edge.B);
+                        }
+                        else if (curBound[^1] == edge.B)
+                        {
+                            curBound.Add(edge.A);
+                        }
+                        else if (curBound[0] == edge.A)
+                        {
+                            curBound.Insert(0, edge.B);
+                        }
+                        else if (curBound[0] == edge.B)
+                        {
+                            curBound.Insert(0, edge.A);
+                        }
+                        else
+                        {
+                            continue;
+                        }
+
+                        found = true;
+                        boundEdges.RemoveAt(i--);
+                    }
+                }
+                if (curBound[0] == curBound[^1])
+                {
+                    curBound.RemoveAt(curBound.Count - 1);
+                }
+                bounds.Add([.. curBound]);
+            }
+
+            return [.. bounds];
+        }
+
+        /// <summary>
         /// Edge arrays produced by <see cref="SurfacePolygon"/> always follows the structure [(a, b), (b, c), (c, d), (d, a)]. This method rotates the array so that <paramref name="firstElement"/> is the first element, and the original structure is preserved.
         /// </summary>
         /// <remarks>

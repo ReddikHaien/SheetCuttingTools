@@ -10,9 +10,15 @@ namespace SheetCuttingTools.Infrastructure.Extensions
     public static class CollectionExtensions
     {
         public static IReadOnlyList<T> Combine<T>(this IReadOnlyList<T> first, IReadOnlyList<T> second)
-            => new CombinedReadonlyLists<T>(first, second);
+        {
+            if (second.Count == 0)
+                return first;
 
-
+            if (first.Count == 0)
+                return second;
+            
+            return new CombinedReadonlyLists<T>(first, second);
+        }
     }
 
     public class CombinedReadonlyLists<T>(IReadOnlyList<T> first, IReadOnlyList<T> second) : IReadOnlyList<T>

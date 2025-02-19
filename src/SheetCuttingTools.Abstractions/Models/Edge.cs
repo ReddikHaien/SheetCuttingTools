@@ -48,6 +48,13 @@ namespace SheetCuttingTools.Abstractions.Models
         public static bool operator !=(Edge left, Edge right)
             => !(left==right);
 
+        public bool ContainsPoint(int point)
+            => point == A || point == B;
+
+        public int OtherPoint(int point)
+            => point == A ? B : A;
+
+
         /// <summary>
         /// Checks if two edges are the same edge and have the same direction.
         /// </summary>

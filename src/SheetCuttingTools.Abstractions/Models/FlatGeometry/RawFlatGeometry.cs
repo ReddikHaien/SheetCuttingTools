@@ -1,22 +1,33 @@
 ﻿using g3;
 using SheetCuttingTools.Abstractions.Contracts;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SheetCuttingTools.Abstractions.Models.FlatGeometry
 {
     public class RawFlatGeometry : IFlattenedGeometry
     {
+        private bool center2dWritten;
+        private bool center3dWritten;
+        private Vector2d center2d;
+        private Vector3d center3d;
+
         public IReadOnlyList<Vector2d> Points { get; init; }
 
         public IReadOnlyList<(Polygon Original, Polygon Placed)> PlacedPolygons { get; init; }
 
         public IDictionary<Edge, Vector2d> BoundaryNormal { get; init; }
 
-        public Vector2d Center2D { get; init; }
+        public Vector2d Center2D
+        {
+            get
+            {
+                if (!center2dWritten)
+                {
+                    center2d = Points.Aggregate((a, b) => a + b) / Points.Count;
+                    center2dWritten = true;
+                }
+                return center2d;
+            }
+        }
 
         public IReadOnlyList<Polygon> Polygons { get; init; }
 
@@ -26,6 +37,17 @@ namespace SheetCuttingTools.Abstractions.Models.FlatGeometry
 
         public IGeometry? Parent { get; init; }
 
-        public Vector3d Center3d { get; init; }
+        public Vector3d Center3d
+        {
+            get
+            {
+                if (!center3dWritten)
+                {
+                    center3d = Vertices.Aggregate((a, b) => a + b) / Points.Count;
+                    center3dWritten = true;
+                }
+                return center3d;
+            }
+        }
     }
 }

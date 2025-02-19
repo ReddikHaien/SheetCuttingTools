@@ -62,12 +62,12 @@ namespace SheetCuttingTools.Grasshopper.Models
 
             foreach(var (edge, name) in Value.BoundaryNames)
             {
-                var (a, b) = Value.FlattenedSegment.GetEdge(edge);
+                var (a, b) = Value.FlattenedSegment.GetPoints(edge);
                 var p = (a + b) / 2;
 
                 var plane = Plane.WorldXY;
 
-                plane.Origin = p.ToPoint3f();
+                plane.Origin = p.ToRhinoPoint3d();
 
                 args.Pipeline.Draw3dText(name, textColor, plane, 1.0, "Calibri");
             }
@@ -85,7 +85,7 @@ namespace SheetCuttingTools.Grasshopper.Models
             Dictionary<string, Point3d[][]> curves = [];
 
             return sheet.Lines.Select(
-                x => (x.Key, x.Select(x => x.Select(y => (Point3d)y.ToPoint3f()).ToArray()).ToArray())
+                x => (x.Key, x.Select(x => x.Select(y => y.ToRhinoPoint3d()).ToArray()).ToArray())
             ).ToArray();
 
         }

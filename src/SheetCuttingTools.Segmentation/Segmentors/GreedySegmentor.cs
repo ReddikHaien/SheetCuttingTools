@@ -13,8 +13,10 @@ namespace SheetCuttingTools.Segmentation.Segmentors;
 /// This segmentor will greedily fill a segment before moving on to the next one. This can result in large sections with small sections between.
 /// </para>
 /// </remarks>
-public class GreedySegmentor(IPolygonScorer[] polygonScorers, IEdgeFilter[] edgeFilters, ISegmentConstraint[] segmentConstraints)
+public class GreedySegmentor(IPolygonScorer[] polygonScorers, IEdgeFilter[] edgeFilters, ISegmentConstraint[] segmentConstraints, IProgress<double> progress)
 {
+    private readonly IProgress<double> progress = progress;
+
     public IPolygonScorer[] PolygonScorers { get; } = polygonScorers;
     public IEdgeFilter[] EdgeFilters { get; } = edgeFilters;
     public ISegmentConstraint[] SegmentConstraints { get; } = segmentConstraints;
@@ -34,6 +36,8 @@ public class GreedySegmentor(IPolygonScorer[] polygonScorers, IEdgeFilter[] edge
         List<SegmentBuilder> segments = [];
 
         segments.Add(CreateNewBuilder(polygons, neighbours, model));
+
+        double total = polygons.Count;
 
         while (polygons.Count > 0)
         {
@@ -63,6 +67,9 @@ public class GreedySegmentor(IPolygonScorer[] polygonScorers, IEdgeFilter[] edge
             {
                 segments.Add(CreateNewBuilder(polygons, neighbours, model));
             }
+
+            double processed = 1.0 - (polygons.Count / total);
+            progress.Report(processed);
         }
 
         return segments.Select(x => x.ToSegment(model)).ToArray();

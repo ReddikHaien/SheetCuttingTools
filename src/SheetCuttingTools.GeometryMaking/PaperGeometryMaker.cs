@@ -1,4 +1,6 @@
-﻿using SheetCuttingTools.Abstractions.Models;
+﻿using g3;
+using SheetCuttingTools.Abstractions.Contracts;
+using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.GeometryMaking.Models;
 using SheetCuttingTools.Infrastructure.Extensions;
 using SheetCuttingTools.Infrastructure.Math;
@@ -13,16 +15,16 @@ namespace SheetCuttingTools.GeometryMaking
         public const string MountainFold = "Paper.MountainFold";
         public const string GlueTap = "Paper.GlueTap";
 
-        public Sheet CreateSheet(FlattenedSegment segment, GeometryMakerContext context)
+        public Sheet CreateSheet(IFlattenedGeometry segment, GeometryMakerContext context)
         {
             //HashSet<Edge> tapped = [];
             Dictionary<Edge, Kind> edges = [];
             Dictionary<Edge, string> names = [];
 
-            var lookip = segment.Polygons.SelectMany(x => x.Placed.GetEdges().Zip(x.Original.GetEdges())).ToLookup(x => x.Second, x => x.First);
+            var lookup = segment.PlacedPolygons.SelectMany(x => x.Placed.GetEdges().Zip(x.Original.GetEdges())).ToLookup(x => x.Second, x => x.First);
 
             
-            foreach(var group in lookip)
+            foreach(var group in lookup)
             {
                 var original = group.Key;
                 foreach(var edge in group)
@@ -44,30 +46,9 @@ namespace SheetCuttingTools.GeometryMaking
                 }
             }
 
-            //foreach (var (original, placed) in segment.Polygons)
-            //{
-            //    foreach (var (pedge, oedge) in placed.GetEdges().Zip(original.GetEdges()))
-            //    {
-            //        // It's already placed, mark it as an fold
-            //        if (edges.ContainsKey(pedge))
-            //        {
-            //            edges[pedge] = Kind.Fold;
-            //            continue;
-            //        }
-
-            //        //if (tapped.Contains(oedge)){
-            //        //    edges[pedge] = Kind.Cut;
-            //        //    continue;
-            //        //}
-
-            //        edges[pedge] = Kind.Tap;
-            //        tapped.Add(oedge);
-            //    }
-            //}
-
             List<int[]> boundaryLines = [];
 
-            List<(Edge placed, Edge original)> stack = segment.Polygons.SelectMany(x => x.Placed.GetEdges().Zip(x.Original.GetEdges())).Where(x => edges[x.First] is Kind.Tap or Kind.Cut).ToList();
+            List<(Edge placed, Edge original)> stack = segment.PlacedPolygons.SelectMany(x => x.Placed.GetEdges().Zip(x.Original.GetEdges())).Where(x => edges[x.First] is Kind.Tap or Kind.Cut).ToList();
 
             while (stack.Count > 0)
             {
@@ -119,12 +100,12 @@ namespace SheetCuttingTools.GeometryMaking
                 boundaryLines.Add([.. line]);
             }
 
-            List<Vector2[]> generatedBoundaryLines = [];
+            List<Vector2d[]> generatedBoundaryLines = [];
 
             foreach(var line in boundaryLines)
             {
                
-                List<Vector2> boundaryLine = [];
+                List<Vector2d> boundaryLine = [];
                 List<(Edge, int)> taps = [];
                 foreach(var (a, b) in line.SlidingWindow())
                 {
@@ -132,7 +113,7 @@ namespace SheetCuttingTools.GeometryMaking
                         continue;
 
                     var edge = new Edge(a, b);
-                    var (pa, pb) = segment.GetEdge(edge);
+                    var (pa, pb) = segment.GetPoints(edge);
                    
                     if (boundaryLine.Count == 0)
                     {
@@ -156,10 +137,10 @@ namespace SheetCuttingTools.GeometryMaking
 
                 foreach(var (edge, index) in taps)
                 {
-                    var (pa, pb) = segment.GetEdge(edge);
+                    var (pa, pb) = segment.GetPoints(edge);
                     
                     var u = pb - pa;
-                    var v = segment.Normals[edge];
+                    var v = segment.BoundaryNormal[edge];
 
                     var p2 = v * 3 + u * 0.25f;
                     var p3 = v * 3 + u * 0.75f;
@@ -193,11 +174,11 @@ namespace SheetCuttingTools.GeometryMaking
                 generatedBoundaryLines.Add([.. boundaryLine]);
             }
 
-            List<Vector2[]> foldLines = [];
+            List<Vector2d[]> foldLines = [];
 
             foreach(var edge in edges.Where(x => x.Value is Kind.Fold or Kind.Tap))
             {
-                var (pa, pb) = segment.GetEdge(edge.Key);
+                var (pa, pb) = segment.GetPoints(edge.Key);
 
                 foldLines.Add([pa, pb]);
             }
