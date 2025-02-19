@@ -145,7 +145,7 @@ namespace SheetCuttingTools.Abstractions.Models
 
                 public override bool AddPoint(Vector3d point, int value)
                 {
-                    if (points.Count > 1024)
+                    if (points.Count > 4096)
                         return false;
 
                     points.Add((point, value));

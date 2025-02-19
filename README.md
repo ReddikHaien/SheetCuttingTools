@@ -46,7 +46,7 @@ The segmentation components are responsible for creating a rough segmentation of
 The greedy segmentator is a "first-come-first-served" based polygon segmentation algorithm. It tries to expand a segment as long as all constraints are fulfilled. It starts on a new segment once it can't extend a segment anymore. This segmentation component produces large, uneven sheets, though can work Ok on simpler geometry.
 
 #### Cake slicer segmentator
-The cake slicer segmentator is a segmentation component that divides a component radially into even segments (Like a cake!)
+The cake slicer segmentator is a segmentation component that divides a component radially into even segments (Like a cak
 
 ### Flattening
 The flattening components are responsible for converting models/segments into 2D representations that can be folded back into the original shape. How a shape is flattened out is based on the specific component, e.g. the greedy flattener produces large and uneven segments, while a different implementation might produce a better result.

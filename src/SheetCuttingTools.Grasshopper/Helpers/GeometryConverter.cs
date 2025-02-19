@@ -35,9 +35,51 @@ namespace SheetCuttingTools.Grasshopper.Helpers
                 _ => throw new NotImplementedException("missing value")
             };
 
-        private static IGeometry CreateGeometry(this SubD subD)
+        private static IGeometry Test(this SubD subD)
             => Mesh.CreateFromSubD(subD, 1).CreateGeometry();
         
+        private static IGeometry CreateGeometry(this SubD subD)
+        {
+            subD = (SubD)subD.Duplicate();
+            subD.Subdivide(2);
+            var boundingBox = subD.GetBoundingBox(true);
+            OctTree tree = new(boundingBox.Min.ToG3Vector3d(), boundingBox.Max.ToG3Vector3d(), 0.01);
+
+            List<g3.Vector3d> verts = [];
+            List<g3.Vector3f> normals = [];
+            List<Polygon> polygons = [];
+
+            foreach(var face in subD.Faces)
+            {
+                int count = face.VertexCount;
+                int[] polygon = new int[count];
+
+                for(int i = 0; i < count; i++)
+                {
+                    var vertex = face.VertexAt(i);
+                    var p = vertex.SurfacePoint().ToG3Vector3d();
+                    if (!tree.GetValue(p, out var index))
+                    {
+                        verts.Add(p);
+                        normals.Add(face.SurfaceCenterNormal.ToG3Vector3f());
+                        index = verts.Count - 1;
+                        tree.AddPoint(p, index);
+                    }
+
+                    polygon[i] = index;
+                }
+                polygons.Add(new Polygon(polygon));
+            }
+
+            return new RawGeometry
+            {
+                Vertices = verts.ToArray().AsReadOnly(),
+                Normals = normals.ToArray().AsReadOnly(),
+                Polygons = polygons.ToArray().AsReadOnly(),
+                Center3d = verts.Aggregate((a, b) => a + b) / verts.Count
+            };
+        }
+
         private static IGeometry CreateGeometry(this Brep brep)
         {
             var all = Mesh.CreateFromBrep(brep, MeshingParameters.QualityRenderMesh);
