@@ -39,15 +39,15 @@ jobs:
     
     - name: Install dependencies 📂
       if: steps.semantic.outputs.new_release_published == 'true'
-      run: dotnet restore .
-
-    - name: Build 🧱
-      if: steps.semantic.outputs.new_release_published == 'true'
-      run: dotnet build src/SheetCuttingTools.Grasshopper --c Release --no-restore
+      run: dotnet restore src/SheetCuttingTools.Grasshopper
       
     - name: Test 🧪
       if: steps.semantic.outputs.new_release_published == 'true'
-      run: dotnet test tests --c Release --no-build
+      run: dotnet test tests --c Release
+      
+    - name: Build 🧱
+      if: steps.semantic.outputs.new_release_published == 'true'
+      run: dotnet build src/SheetCuttingTools.Grasshopper --c Release -p Version=${{ steps.semantic.outputs.new_release_version }} --no-restore
 
     - name: Publish 📂
       if: steps.semantic.outputs.new_release_published == 'true'
