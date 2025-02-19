@@ -1,0 +1,66 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: .NET
+
+on:
+  push:
+    branches: [ "main" ]
+    
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+
+    
+    - name: Semantic Release
+      uses: cycjimmy/semantic-release-action@v4
+      id: semantic
+      with:
+        dry_run: true
+        extra_plugins: |
+          @semantic-release/exec
+          @semantic-release/changelog
+          @semantic-release/git
+      env:
+        GITHUB_TOKEN: ${{ secrets.SEMANTIC_VER_TOKEN }}
+        
+    - name: Setup .NET
+      if: steps.semantic.outputs.new_release_published == 'true'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 7.0.x
+    
+    - name: Install dependencies 📂
+      if: steps.semantic.outputs.new_release_published == 'true'
+      run: dotnet restore .
+
+    - name: Build 🧱
+      if: steps.semantic.outputs.new_release_published == 'true'
+      run: dotnet build src/SheetCuttingTools.Grasshopper --c Release --no-restore
+      
+    - name: Test 🧪
+      if: steps.semantic.outputs.new_release_published == 'true'
+      run: dotnet test tests --c Release --no-build
+
+    - name: Publish 📂
+      if: steps.semantic.outputs.new_release_published == 'true'
+      run: dotnet publish ./src/SheetCuttingTools.Grasshopper -C Release --output ./publish
+
+    - name: Publish to GitHub
+      if: steps.semantic.outputs.new_release_published == 'true' && github.event.inputs.dryRun == 'false'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ steps.semantic.outputs.new_release_version }}
+        body: ${{ steps.semantic.outputs.new_release_notes }}
+        draft: False
+        prerelease: False
+        files: .publish/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.SEMANTIC_VER_TOKEN }}
+
