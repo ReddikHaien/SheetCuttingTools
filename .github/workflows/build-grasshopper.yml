@@ -35,7 +35,7 @@ jobs:
       if: steps.semantic.outputs.new_release_published == 'true'
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 7.0.x
+        dotnet-version: 8.0.x
     
     - name: Install dependencies 📂
       if: steps.semantic.outputs.new_release_published == 'true'
