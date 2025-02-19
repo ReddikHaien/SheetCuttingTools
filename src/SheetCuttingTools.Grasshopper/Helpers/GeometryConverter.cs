@@ -32,7 +32,7 @@ namespace SheetCuttingTools.Grasshopper.Helpers
                 IGeometry i => i,
                 GH_Geometry i => i.Value,
 
-                _ => throw new NotImplementedException("missing value")
+                _ => throw new NotImplementedException("missing values")
             };
 
         private static IGeometry CreateGeometry(this SubD subD)
