@@ -27,6 +27,7 @@ jobs:
           @semantic-release/exec
           @semantic-release/changelog
           @semantic-release/git
+          @semantic-release/commit-analyzer
       env:
         GITHUB_TOKEN: ${{ secrets.SEMANTIC_VER_TOKEN }}
         
