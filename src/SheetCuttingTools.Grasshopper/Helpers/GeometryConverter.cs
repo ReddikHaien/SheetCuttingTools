@@ -35,9 +35,6 @@ namespace SheetCuttingTools.Grasshopper.Helpers
                 _ => throw new NotImplementedException("missing value")
             };
 
-        private static IGeometry Test(this SubD subD)
-            => Mesh.CreateFromSubD(subD, 1).CreateGeometry();
-        
         private static IGeometry CreateGeometry(this SubD subD)
         {
             subD = (SubD)subD.Duplicate();
