@@ -10,6 +10,7 @@ using SheetCuttingTools.Grasshopper.Models;
 using SheetCuttingTools.Infrastructure.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -18,8 +19,10 @@ using System.Threading.Tasks;
 namespace SheetCuttingTools.Grasshopper.Components.Converters
 {
     [Guid("0B61CCB7-7DC5-4E07-B9E4-3301A4588B27")]
-    public class SheetUnpackerComponent() : GH_Component("Sheet Unpacker", "SU", "Unpacks a sheet into curves and category names", Constants.Category, Constants.HelperCategories)
+    public class SheetUnpackerComponent() : GH_Component("Sheet unpacker", "SU", "Unpacks a sheet into curves and category names", Constants.Category, Constants.HelperCategories)
     {
+        protected override Bitmap Icon => Icons.Helper_SheetUnpacking;
+
         public override Guid ComponentGuid => GetType().GUID;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)

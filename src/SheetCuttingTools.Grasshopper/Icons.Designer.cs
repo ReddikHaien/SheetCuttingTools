@@ -63,9 +63,19 @@ namespace SheetCuttingTools.Grasshopper {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap Flattening_GreedyFlattener {
+        internal static System.Drawing.Bitmap GeometryMaker_PaperGeometryMaker {
             get {
-                object obj = ResourceManager.GetObject("Flattening.GreedyFlattener", resourceCulture);
+                object obj = ResourceManager.GetObject("GeometryMaker.PaperGeometryMaker", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Helper_SheetUnpacking {
+            get {
+                object obj = ResourceManager.GetObject("Helper.SheetUnpacking", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
