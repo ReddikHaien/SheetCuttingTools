@@ -1,6 +1,7 @@
 ﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 using GrasshopperAsyncComponent;
+using Rhino.Geometry;
 using SheetCuttingTools.Abstractions.Behaviors;
 using SheetCuttingTools.Abstractions.Contracts;
 using SheetCuttingTools.Flattening;
@@ -26,16 +27,18 @@ namespace SheetCuttingTools.Grasshopper.Components.Unrolling
         {
             private IGeometry segment;
             private IFlattenedSegmentConstraint[] flattenedSegmentConstraints;
+            private Vector3d preferredStripDirection;
             private IFlattenedGeometry[] flattened;
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
                 if (segment is null)
                     return;
+
                 try
                 {
                     var progress = new ToolProgress(Id, ReportProgress);
-                    var unroller = new StripSegmentUnroller(flattenedSegmentConstraints);
+                    var unroller = new StripSegmentUnroller(flattenedSegmentConstraints, preferredStripDirection.ToG3Vector3d());
                     flattened = unroller.UnrollSegment(segment, CancellationToken);
                     if (!CancellationToken.IsCancellationRequested)
                         Done();
@@ -70,8 +73,16 @@ namespace SheetCuttingTools.Grasshopper.Components.Unrolling
                     AddWarningMessage("Some behaviors are not supported");
                 }
 
+                GH_Vector preferredDirection = new();
+                if (!DA.GetData(2, ref preferredDirection))
+                {
+                    preferredDirection.Value = Vector3d.ZAxis;
+                }
+                
                 this.segment = segment.CreateGeometry();
-                this.flattenedSegmentConstraints = behaviors.Select(x => x.Value as IFlattenedSegmentConstraint).Where(x => x is not null).ToArray();
+                flattenedSegmentConstraints = behaviors.Select(x => x.Value as IFlattenedSegmentConstraint).Where(x => x is not null).ToArray();
+                preferredStripDirection = preferredDirection.Value;
+                preferredStripDirection.Unitize();
             }
             
 
@@ -84,6 +95,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Unrolling
             {
                 pManager.AddGenericParameter("Segments", "S", "The segments to unroll", GH_ParamAccess.item);
                 pManager.AddGenericParameter("Behaviors", "B", "The behaviors used by this component. Supported behaviors are Flattened segment constraints", GH_ParamAccess.list);
+                pManager.AddVectorParameter("Preferred direction", "P", "The preferred direction of the strips, default is along global Z", GH_ParamAccess.item, Vector3d.ZAxis);
             }
 
             public override void RegisterOutputParams(GH_OutputParamManager pManager)

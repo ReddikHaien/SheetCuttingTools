@@ -8,9 +8,21 @@ using System.Diagnostics;
 
 namespace SheetCuttingTools.Flattening
 {
-    public class StripSegmentUnroller(IFlattenedSegmentConstraint[] flattenedGeometryConstraints)
+    public class StripSegmentUnroller(IFlattenedSegmentConstraint[] flattenedGeometryConstraints, Vector3d preferredStripDirection)
     {
         private readonly IFlattenedSegmentConstraint[] flattenedGeometryConstraints = flattenedGeometryConstraints;
+        private readonly Vector3d preferredStripDirection = preferredStripDirection;
+
+        public StripSegmentUnroller(IFlattenedSegmentConstraint[] flattenedGeometryConstraints) : this(flattenedGeometryConstraints, Vector3d.AxisZ)
+        {
+
+        }
+
+        public StripSegmentUnroller(): this([])
+        {
+
+        }
+
 
         public IFlattenedGeometry[] UnrollSegment(IGeometry geometry, CancellationToken cancellationToken = default)
         {
