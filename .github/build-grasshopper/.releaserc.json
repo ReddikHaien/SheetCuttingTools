@@ -21,9 +21,9 @@
                   "label": "SheetCuttingTools.Grasshopper-net7.zip"
                 },
                 {
-                  "path": "../../build-output.tar",
-                  "name": "SheetCuttingTools.Grasshopper-net7.tar",
-                  "label": "SheetCuttingTools.Grasshopper-net7.tar"
+                  "path": "../../build-output.tar.gz",
+                  "name": "SheetCuttingTools.Grasshopper-net7.tar.gz",
+                  "label": "SheetCuttingTools.Grasshopper-net7.tar.gz"
                 }
               ] 
             }
