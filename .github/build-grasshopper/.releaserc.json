@@ -12,9 +12,17 @@
           "@semantic-release/git",
           "@semantic-release/changelog",
           [
+            "@semantic-release/github",
+            {
+              "assets":[
+                "../../publish/*.!(pdb)"
+              ] 
+            }
+          ],
+          [
             "@semantic-release/exec",
             {
-              "publishCmd": "(cd ../../ && ls && ./publish-proj.sh ${nextRelease.version} src/SheetCuttingTools.Grasshopper ./output)"
+              "prepareCmd": "(cd ../../ && ls && ./publish-proj.sh ${nextRelease.version} src/SheetCuttingTools.Grasshopper ./output)"
             }
           ]
   ]
