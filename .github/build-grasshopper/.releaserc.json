@@ -31,7 +31,8 @@
           [
             "@semantic-release/exec",
             {
-              "prepareCmd": "(cd ../../ && ls && ./publish-proj.sh ${nextRelease.version} src/SheetCuttingTools.Grasshopper ./publish)"
+              "verifyCmd": "(cd ../../ && ./verify-proj.sh src/SheetCuttingTools.Grasshopper)",
+              "prepareCmd": "(cd ../../ && ./publish-proj.sh ${nextRelease.version} src/SheetCuttingTools.Grasshopper ./publish)"
             }
           ]
   ]
