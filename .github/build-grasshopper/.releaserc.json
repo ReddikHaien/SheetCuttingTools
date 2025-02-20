@@ -17,13 +17,13 @@
               "assets":[
                 {
                   "path": "../../build-output.zip",
-                  "name": "Grasshopper Component (NET 7.0)",
-                  "label": "SheetCuttingTools.Grasshopper.zip"
+                  "name": "SheetCuttingTools.Grasshopper-net7.zip",
+                  "label": "SheetCuttingTools.Grasshopper-net7.zip"
                 },
                 {
                   "path": "../../build-output.tar",
-                  "name": "Grasshopper Component (NET 7.0)",
-                  "label": "SheetCuttingTools.Grasshopper.tar"
+                  "name": "SheetCuttingTools.Grasshopper-net7.tar",
+                  "label": "SheetCuttingTools.Grasshopper-net7.tar"
                 }
               ] 
             }

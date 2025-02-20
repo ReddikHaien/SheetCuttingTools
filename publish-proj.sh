@@ -8,5 +8,5 @@ dotnet publish $2 -c Release --output $3
 
 (cd $3 && rm *.pdb)
 
-zip build-output.zip $3
-tar -cf build-output.tar $3
+zip -rv build-output.zip $3
+tar -cvf build-output.tar $3
