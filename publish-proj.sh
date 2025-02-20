@@ -1,12 +1,7 @@
 #!/bin/bash
 
-$version = $1
-$project= $2
-$output = $3
+dotnet restore ../../$2
 
+dotnet build ../../$2 -c Release --no-restore -p Version=$1
 
-dotnet restore ../../$project
-
-dotnet build ../../$project -c Release --no-restore -p Version=$version
-
-dotnet publish ../../$project -c Release --output $output
+dotnet publish ../../$2 -c Release --output $3
