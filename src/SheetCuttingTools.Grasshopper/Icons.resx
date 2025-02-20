@@ -124,6 +124,12 @@
   <data name="Helper.SheetUnpacking" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>icons\helpers\sheet-unpacking.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="Helpers.GeometryConverter" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>icons\helpers\geometry-converter.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Helpers.MeshConverter" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>icons\helpers\mesh-converter.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="Segmentation.CakeSlicerSegmentor" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>icons\segmentation\cake-slicer-segmentor.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>

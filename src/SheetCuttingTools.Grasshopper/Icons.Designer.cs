@@ -83,6 +83,26 @@ namespace SheetCuttingTools.Grasshopper {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap Helpers_GeometryConverter {
+            get {
+                object obj = ResourceManager.GetObject("Helpers.GeometryConverter", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Helpers_MeshConverter {
+            get {
+                object obj = ResourceManager.GetObject("Helpers.MeshConverter", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Segmentation_CakeSlicerSegmentor {
             get {
                 object obj = ResourceManager.GetObject("Segmentation.CakeSlicerSegmentor", resourceCulture);
