@@ -18,10 +18,15 @@ namespace SheetCuttingTools.Segmentation.Segmentors
         public async Task<IGeometry[]> SegmentGeometry(IGeometry geometry, Plane3d cutPlane, int segments, CancellationToken cancellationToken = default)
         {
             double highest = geometry.Vertices.Max(cutPlane.DistanceTo);
-            double layerHeight = highest / segments;
+            double lowest = geometry.Vertices.Min(cutPlane.DistanceTo);
+            double dist = highest - lowest;
+            double layerHeight = dist / segments;
+
+            var movedPlane = new Plane3d(cutPlane.Normal, cutPlane.Constant + lowest);
 
             var tasks = Enumerable.Range(0, segments).Select(i => Task.Run(async () =>
             {
+
                 var plane1 = new Plane3d(cutPlane.Normal, cutPlane.Constant + i * layerHeight);
                 var plane2 = new Plane3d(-cutPlane.Normal, -(cutPlane.Constant + (i + 1) * layerHeight));
                 
