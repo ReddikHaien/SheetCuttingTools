@@ -9,6 +9,7 @@ using SheetCuttingTools.Grasshopper.Models;
 using SheetCuttingTools.Segmentation.Segmentors;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -19,6 +20,8 @@ namespace SheetCuttingTools.Grasshopper.Components.Segmentation
     [Guid("ACE14DBC-D41C-4A77-A02D-CDBEFA7C81AF")]
     public class LayerSlicerSegmentorComponent() : BaseSegmentator("Layer slicer segmentor", "LSS", "Slices a geometry according to a plane")
     {
+        protected override Bitmap Icon => Icons.Segmentation_LayerSlicerSegmentor;
+
         protected override ToolWorker CreateWorker()
             => new LayerSlicerSegmentorWorker(this);
 

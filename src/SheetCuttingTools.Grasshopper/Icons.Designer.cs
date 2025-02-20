@@ -63,9 +63,39 @@ namespace SheetCuttingTools.Grasshopper {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap Flattening_GreedyFlattener {
+        internal static System.Drawing.Bitmap GeometryMaker_PaperGeometryMaker {
             get {
-                object obj = ResourceManager.GetObject("Flattening.GreedyFlattener", resourceCulture);
+                object obj = ResourceManager.GetObject("GeometryMaker.PaperGeometryMaker", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Helper_SheetUnpacking {
+            get {
+                object obj = ResourceManager.GetObject("Helper.SheetUnpacking", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Helpers_GeometryConverter {
+            get {
+                object obj = ResourceManager.GetObject("Helpers.GeometryConverter", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Helpers_MeshConverter {
+            get {
+                object obj = ResourceManager.GetObject("Helpers.MeshConverter", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -86,6 +116,36 @@ namespace SheetCuttingTools.Grasshopper {
         internal static System.Drawing.Bitmap Segmentation_GreedySegmentor {
             get {
                 object obj = ResourceManager.GetObject("Segmentation.GreedySegmentor", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Segmentation_LayerSlicerSegmentor {
+            get {
+                object obj = ResourceManager.GetObject("Segmentation.LayerSlicerSegmentor", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Unrolling_GreedyUnroller {
+            get {
+                object obj = ResourceManager.GetObject("Unrolling.GreedyUnroller", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Unrolling_StripUnroller {
+            get {
+                object obj = ResourceManager.GetObject("Unrolling.StripUnroller", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

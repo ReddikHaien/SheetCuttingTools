@@ -3,6 +3,7 @@ using Grasshopper.Kernel.Types;
 using SheetCuttingTools.Grasshopper.Helpers;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -13,6 +14,8 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
     [Guid("D220485A-BC4F-48FA-80ED-7195FA38F482")]
     public class MeshConverterComponent() : GH_Component("Geometry to mesh", "G2M", "Converts a geometry to a mesh", Constants.Category,Constants.HelperCategories)
     {
+        protected override Bitmap Icon => Icons.Helpers_MeshConverter;
+
         public override Guid ComponentGuid => GetType().GUID;
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {

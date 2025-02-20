@@ -9,14 +9,16 @@ using SheetCuttingTools.Grasshopper.Models;
 using SheetCuttingTools.Infrastructure.Progress;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace SheetCuttingTools.Grasshopper.Components.Unrolling
 {
     [Guid("8D4C88D3-3382-40EE-83DF-D0D73F5CD22E")]
-    public class StripUnrollerComponent() : BaseUnroller("Strip unroller", "SU", "Unrolls geometry based on strips")
+    public class StripUnrollerComponent() : BaseUnroller("Strip unroller", "SU", "Unrolls geometry by greedily building up strips")
     {
+        protected override Bitmap Icon => Icons.Unrolling_StripUnroller;
         protected override ToolWorker CreateWorker()
             => new StripUnrollerWorker(this);
 
