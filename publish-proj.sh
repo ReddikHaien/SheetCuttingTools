@@ -9,4 +9,4 @@ dotnet publish $2 -c Release --output $3
 (cd $3 \
     && rm *.pdb \
     && zip -rv ../build-output.zip . \
-    && tar -czvf build-output.tar.gz .)
+    && tar -czvf ../build-output.tar.gz .)
