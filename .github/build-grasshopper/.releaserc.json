@@ -15,7 +15,7 @@
             "@semantic-release/github",
             {
               "assets":[
-                "../../publish/*.!(pdb)"
+                { "path": "../../publish/*.!(pdb)", "name": "Grasshopper Component (NET 7.0)", "label": "gh-component-net7" }
               ] 
             }
           ],
