@@ -21,7 +21,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Unrolling
     [Guid("5D6297AC-91E6-4B02-9D19-C467056E9CCE")]
     public class GreedyUnrollerComponent() : BaseUnroller("Greedy unroller", "GU", "Unrolling algorithm that greedily builds segments")
     {
-        protected override Bitmap Icon => Icons.Flattening_GreedyFlattener;
+        protected override Bitmap Icon => Icons.Unrolling_GreedyUnroller;
 
         protected override ToolWorker CreateWorker()
             => new GreedyUnrollerWorker(this);
