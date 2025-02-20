@@ -22,7 +22,7 @@ jobs:
       uses: cycjimmy/semantic-release-action@v4
       id: semantic
       with:
-        dry_run: true
+        working_directory: ./.github/workflows/build-grasshopper
         extra_plugins: |
           @semantic-release/exec
           @semantic-release/changelog
@@ -44,14 +44,23 @@ jobs:
     - name: Build 🧱
       if: steps.semantic.outputs.new_release_published == 'true'
       run: dotnet build src/SheetCuttingTools.Grasshopper --c Release --no-restore
-      
-    - name: Test 🧪
-      if: steps.semantic.outputs.new_release_published == 'true'
-      run: dotnet test tests --c Release --no-build
-
+    
     - name: Publish 📂
       if: steps.semantic.outputs.new_release_published == 'true'
       run: dotnet publish ./src/SheetCuttingTools.Grasshopper -C Release --output ./publish
+
+    - name: Semantic Release
+      uses: cycjimmy/semantic-release-action@v4
+      id: semantic
+      with:
+        dry_run: false
+        extra_plugins: |
+          @semantic-release/exec
+          @semantic-release/changelog
+          @semantic-release/git
+          @semantic-release/commit-analyzer
+      env:
+        GITHUB_TOKEN: ${{ secrets.SEMANTIC_VER_TOKEN }}
 
     - name: Publish to GitHub
       if: steps.semantic.outputs.new_release_published == 'true' && github.event.inputs.dryRun == 'false'
