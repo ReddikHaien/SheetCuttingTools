@@ -22,6 +22,9 @@ jobs:
       with:
         dotnet-version: 8.0.x
     
+    - name: Install zip
+      run: sudo apt install zip
+
     - name: Semantic Release
       uses: cycjimmy/semantic-release-action@v4
       id: semantic

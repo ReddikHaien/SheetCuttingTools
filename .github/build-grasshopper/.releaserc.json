@@ -15,11 +15,16 @@
             "@semantic-release/github",
             {
               "assets":[
-                { "path": [
-                  "../../publish/*.dll",
-                  "../../publish/*.json",
-                  "../../publish/*.gha"
-                ], "name": "Grasshopper Component (NET 7.0)", "label": "gh-component-net7" }
+                {
+                  "path": "../../build-output.zip",
+                  "name": "Grasshopper Component (NET 7.0)",
+                  "label": "SheetCuttingTools.Grasshopper.zip"
+                },
+                {
+                  "path": "../../build-output.tar",
+                  "name": "Grasshopper Component (NET 7.0)",
+                  "label": "SheetCuttingTools.Grasshopper.tar"
+                }
               ] 
             }
           ],
