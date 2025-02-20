@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 
 $version = $1
 $project= $2
