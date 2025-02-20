@@ -17,6 +17,11 @@ jobs:
       with:
         persist-credentials: false
 
+    - name: Setup .NET
+      if: steps.semantic.outputs.new_release_published == 'true'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
     
     - name: Semantic Release
       uses: cycjimmy/semantic-release-action@v4
@@ -31,11 +36,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.SEMANTIC_VER_TOKEN }}
         
-    # - name: Setup .NET
-    #   if: steps.semantic.outputs.new_release_published == 'true'
-    #   uses: actions/setup-dotnet@v4
-    #   with:
-    #     dotnet-version: 7.0.x
+
     
     # - name: Install dependencies 📂
     #   if: steps.semantic.outputs.new_release_published == 'true'
