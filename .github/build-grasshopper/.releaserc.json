@@ -22,7 +22,7 @@
           [
             "@semantic-release/exec",
             {
-              "prepareCmd": "(cd ../../ && ls && ./publish-proj.sh ${nextRelease.version} src/SheetCuttingTools.Grasshopper ./output)"
+              "prepareCmd": "(cd ../../ && ls && ./publish-proj.sh ${nextRelease.version} src/SheetCuttingTools.Grasshopper ./publish)"
             }
           ]
   ]
