@@ -14,7 +14,7 @@
           [
             "@semantic-release/exec",
             {
-              "publishCmd": "../publish-proj.sh ${nextRelease.version} src/SheetCuttingTools.Grasshopper ../../../output"
+              "publishCmd": "(cd ../../ && ./.github/publish-proj.sh ${nextRelease.version} src/SheetCuttingTools.Grasshopper ./output)"
             }
           ]
   ]

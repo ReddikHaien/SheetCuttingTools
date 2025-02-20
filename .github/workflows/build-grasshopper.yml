@@ -27,7 +27,7 @@ jobs:
       uses: cycjimmy/semantic-release-action@v4
       id: semantic
       with:
-        working_directory: ./.github/workflows/build-grasshopper
+        working_directory: ./.github/build-grasshopper
         extra_plugins: |
           @semantic-release/exec
           @semantic-release/changelog
