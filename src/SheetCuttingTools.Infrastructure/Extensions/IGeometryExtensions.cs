@@ -32,6 +32,18 @@ namespace SheetCuttingTools.Infrastructure.Extensions
             return arr;
         }
 
+        public static Vector3d GetMidPoint(this IGeometry geometry, Edge edge)
+        {
+            (Vector3d a, Vector3d b) = geometry.GetVertices(edge);
+            return (a + b) / 2;
+        }
+
+        public static Vector3d GetMidPoint(this IGeometry geometry, Polygon polygon)
+        {
+            var l = polygon.Points.Length;
+            return polygon.Points.Select(i => geometry.Vertices[i]).Aggregate((a, b) => a + b) / l;
+        }
+
         public static DMesh3 ConvertToDMesh3(this IGeometry geometry)
         {
             if (geometry is IHaveMesh meshGeometry)

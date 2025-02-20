@@ -28,6 +28,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Unrolling
             private IGeometry segment;
             private IFlattenedSegmentConstraint[] flattenedSegmentConstraints;
             private Vector3d preferredStripDirection;
+            private bool treatDirectionAsPlane;
             private IFlattenedGeometry[] flattened;
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
@@ -38,7 +39,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Unrolling
                 try
                 {
                     var progress = new ToolProgress(Id, ReportProgress);
-                    var unroller = new StripSegmentUnroller(flattenedSegmentConstraints, preferredStripDirection.ToG3Vector3d());
+                    var unroller = new StripSegmentUnroller(flattenedSegmentConstraints, preferredStripDirection.ToG3Vector3d(), treatDirectionAsPlane);
                     flattened = unroller.UnrollSegment(segment, CancellationToken);
                     if (!CancellationToken.IsCancellationRequested)
                         Done();
@@ -78,8 +79,15 @@ namespace SheetCuttingTools.Grasshopper.Components.Unrolling
                 {
                     preferredDirection.Value = Vector3d.ZAxis;
                 }
-                
+
+                GH_Boolean treatDirectionAsPlane = new();
+                if (!DA.GetData(3, ref treatDirectionAsPlane))
+                {
+                    treatDirectionAsPlane.Value = false;
+                }
+
                 this.segment = segment.CreateGeometry();
+                this.treatDirectionAsPlane = treatDirectionAsPlane.Value;
                 flattenedSegmentConstraints = behaviors.Select(x => x.Value as IFlattenedSegmentConstraint).Where(x => x is not null).ToArray();
                 preferredStripDirection = preferredDirection.Value;
                 preferredStripDirection.Unitize();
@@ -96,6 +104,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Unrolling
                 pManager.AddGenericParameter("Segments", "S", "The segments to unroll", GH_ParamAccess.item);
                 pManager.AddGenericParameter("Behaviors", "B", "The behaviors used by this component. Supported behaviors are Flattened segment constraints", GH_ParamAccess.list);
                 pManager.AddVectorParameter("Preferred direction", "P", "The preferred direction of the strips, default is along global Z", GH_ParamAccess.item, Vector3d.ZAxis);
+                pManager.AddBooleanParameter("Treat direction as plane", "T", "Wether the direction should be treated as the normal of the planes the strips should follow", GH_ParamAccess.item, false);
             }
 
             public override void RegisterOutputParams(GH_OutputParamManager pManager)
