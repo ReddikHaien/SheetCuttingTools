@@ -31,46 +31,46 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.SEMANTIC_VER_TOKEN }}
         
-    - name: Setup .NET
-      if: steps.semantic.outputs.new_release_published == 'true'
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 7.0.x
+    # - name: Setup .NET
+    #   if: steps.semantic.outputs.new_release_published == 'true'
+    #   uses: actions/setup-dotnet@v4
+    #   with:
+    #     dotnet-version: 7.0.x
     
-    - name: Install dependencies 📂
-      if: steps.semantic.outputs.new_release_published == 'true'
-      run: dotnet restore .
+    # - name: Install dependencies 📂
+    #   if: steps.semantic.outputs.new_release_published == 'true'
+    #   run: dotnet restore .
 
-    - name: Build 🧱
-      if: steps.semantic.outputs.new_release_published == 'true'
-      run: dotnet build src/SheetCuttingTools.Grasshopper --c Release --no-restore
+    # - name: Build 🧱
+    #   if: steps.semantic.outputs.new_release_published == 'true'
+    #   run: dotnet build src/SheetCuttingTools.Grasshopper --c Release --no-restore
     
-    - name: Publish 📂
-      if: steps.semantic.outputs.new_release_published == 'true'
-      run: dotnet publish ./src/SheetCuttingTools.Grasshopper -C Release --output ./publish
+    # - name: Publish 📂
+    #   if: steps.semantic.outputs.new_release_published == 'true'
+    #   run: dotnet publish ./src/SheetCuttingTools.Grasshopper -C Release --output ./publish
 
-    - name: Semantic Release
-      uses: cycjimmy/semantic-release-action@v4
-      id: semantic
-      with:
-        dry_run: false
-        extra_plugins: |
-          @semantic-release/exec
-          @semantic-release/changelog
-          @semantic-release/git
-          @semantic-release/commit-analyzer
-      env:
-        GITHUB_TOKEN: ${{ secrets.SEMANTIC_VER_TOKEN }}
+    # - name: Semantic Release
+    #   uses: cycjimmy/semantic-release-action@v4
+    #   id: semantic
+    #   with:
+    #     dry_run: false
+    #     extra_plugins: |
+    #       @semantic-release/exec
+    #       @semantic-release/changelog
+    #       @semantic-release/git
+    #       @semantic-release/commit-analyzer
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.SEMANTIC_VER_TOKEN }}
 
-    - name: Publish to GitHub
-      if: steps.semantic.outputs.new_release_published == 'true' && github.event.inputs.dryRun == 'false'
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: v${{ steps.semantic.outputs.new_release_version }}
-        body: ${{ steps.semantic.outputs.new_release_notes }}
-        draft: False
-        prerelease: False
-        files: .publish/*
-      env:
-        GITHUB_TOKEN: ${{ secrets.SEMANTIC_VER_TOKEN }}
+    # - name: Publish to GitHub
+    #   if: steps.semantic.outputs.new_release_published == 'true' && github.event.inputs.dryRun == 'false'
+    #   uses: softprops/action-gh-release@v1
+    #   with:
+    #     tag_name: v${{ steps.semantic.outputs.new_release_version }}
+    #     body: ${{ steps.semantic.outputs.new_release_notes }}
+    #     draft: False
+    #     prerelease: False
+    #     files: .publish/*
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.SEMANTIC_VER_TOKEN }}
 
