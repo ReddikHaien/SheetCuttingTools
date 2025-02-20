@@ -1,3 +1,5 @@
+#!bin/bash
+
 $version = $1
 $project= $2
 $output = $3
