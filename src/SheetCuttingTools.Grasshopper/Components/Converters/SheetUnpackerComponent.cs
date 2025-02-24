@@ -24,10 +24,12 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
         protected override Bitmap Icon => Icons.Helper_SheetUnpacking;
 
         public override Guid ComponentGuid => GetType().GUID;
+        
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Sheet", "S", "A Sheet to unpack into a tree", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Text Height", "T", "The height of the text", GH_ParamAccess.item, 3);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -42,6 +44,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
             if(!DA.GetData(0, ref sheetWrapper))
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Could not get data!");
+                return;
             }
 
             Sheet sheet = null!;
@@ -55,6 +58,11 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Provided value is not a sheet");
                 return;
             }
+
+            GH_Number textHeight = new();
+            if (!DA.GetData(1, ref textHeight))
+                textHeight.Value = 3;
+
 
             DataTree<Curve> curves = new();
             List<string> categories = [];
@@ -89,7 +97,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
                 {
                     PlainText = name,
                     Plane = plane,
-                    TextHeight = 3,
+                    TextHeight = textHeight.Value,
                 };
 
                 var c = obj.Explode();

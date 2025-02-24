@@ -13,6 +13,20 @@ namespace SheetCuttingTools.Infrastructure.Extensions
 {
     public static class IGeometryExtensions
     {
+
+        public static Vector2d[] GetPoints(this IFlattenedGeometry geometry, Polygon polygon, Vector2d[] buf = null!)
+        {
+            if (buf is null || buf.Length < polygon.Points.Length)
+            {
+                buf = new Vector2d[polygon.Points.Length];
+            }
+
+            for(int i = 0; i < polygon.Points.Length; i++)
+            {
+                buf[i] = geometry.Points[polygon.Points[i]];
+            }
+            return buf;
+        }
         public static (Vector2d A, Vector2d) GetPoints(this IFlattenedGeometry geometry, Edge edge)
             => (geometry.Points[edge.A], geometry.Points[edge.B]);
 
