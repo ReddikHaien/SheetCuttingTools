@@ -121,6 +121,29 @@ namespace SheetCuttingTools.Infrastructure.Math
             return Vector2.Normalize(point - projected);
         }
 
+        public static Vector2d LineIntersection(Vector2d a, Vector2d b, Vector2d c, Vector2d d)
+        {
+            var x1 = a.x;
+            var x2 = b.x;
+            var x3 = c.x;
+            var x4 = d.x;
+
+            var y1 = a.y;   
+            var y2 = b.y;
+            var y3 = c.y;
+            var y4 = d.y;
+
+            var x1y2 = x1 * b.y;
+            var y1x2 = a.y * x2;
+            var x3y4 = x3 * d.y;
+            var y3x4 = c.y * x4;
+
+            var div = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+            var px1 = (x1y2 - y1x2) * (x3 - x4) - (x1 - x2) * (x3y4 - y3x4);
+            var py1 = (x1y2 - y1x2) * (y3 - y4) - (y1 - y2) * (x3y4 - y3x4);
+            return new(px1 / div, py1 / div);
+        }
+
         public static bool LineOverlap(Vector2d a, Vector2d b, Vector2d c, Vector2d d)
         {
             var x43 = d.x - c.x;

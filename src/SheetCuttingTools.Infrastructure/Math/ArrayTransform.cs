@@ -55,10 +55,6 @@ namespace SheetCuttingTools.Infrastructure.Math
                         boundEdges.RemoveAt(i--);
                     }
                 }
-                if (curBound[0] == curBound[^1])
-                {
-                    curBound.RemoveAt(curBound.Count - 1);
-                }
                 bounds.Add([.. curBound]);
             }
 
