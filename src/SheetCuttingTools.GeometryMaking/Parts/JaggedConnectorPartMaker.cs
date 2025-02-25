@@ -17,7 +17,7 @@ namespace SheetCuttingTools.GeometryMaking.Parts
 
         public void CreatePart(Edge edge, Vector2d pointA, Vector2d pointB, Vector2d normal, IFlattenedGeometry flattenedGeometry, PartMakerContext context)
         {
-            var pointOffsets = pointA.Distance(pointB) / numTags;
+            var pointOffsets = pointA.Distance(pointB) / ((numTags*2-1)*2);
 
             var side = context.MaleSide ? 1 : -1;
 
@@ -25,12 +25,23 @@ namespace SheetCuttingTools.GeometryMaking.Parts
 
             Vector2d ab = (pointB - pointA).Normalized;
 
-            for (int i = 0; i < numTags*2 - 1;)
+            for (int i = 0; i < numTags*2-1; i++)
             {
-                vertices.Add(pointA + ab * pointOffsets * (i+1) + normal * tagHeight * side);
+                double offset = pointOffsets + pointOffsets * i*2;
+
+                vertices.Add(pointA + ab * offset + normal * tagHeight * side);
+
+                if (side > 0 && i > 0 && i < numTags*2-2)
+                {
+                    context.AddCircle(pointA + ab * offset - normal*0.4, 1.125);
+                }
+
+                side *= -1;
             }
 
-            context.AddLine([pointA, .. vertices, pointB]);
+            context.AddLine([pointA, ..vertices, pointB]);
+
+            
         }
 
         public double GetRequiredGap(bool maleSide)

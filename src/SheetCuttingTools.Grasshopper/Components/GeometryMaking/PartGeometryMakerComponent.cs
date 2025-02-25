@@ -36,7 +36,7 @@ namespace SheetCuttingTools.Grasshopper.Components.GeometryMaking
 
                 try
                 {
-                    var maker = new PartGeometryMaker(new LatticeHingePartMaker(2), new JaggedConnectorPartMaker(3, 2, 1.5));
+                    var maker = new PartGeometryMaker(new LatticeHingePartMaker(2), new JaggedConnectorPartMaker(3, 1, 0.8));
                     var context = new GeometryMakerContext();
                     var l = segment.Length;
                     var i = 0;

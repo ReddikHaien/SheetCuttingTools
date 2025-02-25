@@ -226,37 +226,7 @@ namespace SheetCuttingTools.Flattening
                 return (firstIndex, candidate);
             }
 
-            //var first = FindBestFit(polygons, edges);
-            //var firstPoly = polygons[first];
-
-            //var candidates = firstPoly.GetEdges().SelectMany(e => edges[e]).Where(x => x != first).ToArray();
-
-            //var second = FindBestFit(polygons, edges, candidates);
-            //var secondPoly = polygons[second];
-
             return (-1, -1);
-        }
-
-        private int FindBestFit(List<Polygon> polygons, ILookup<Edge, int> lookup, int[] candidates = null!)
-        {
-            int best = 0;
-            int count = -1;
-
-            var polys = candidates is null
-                ? polygons.Select((x, i) => (x, i))
-                : candidates.Select(x => (polygons[x], x));
-
-            foreach (var (p, i) in polys)
-            {
-                var c = p.GetEdges().Count(e => lookup[e].Count() == 1);
-                if (c > count)
-                {
-                    best = i;
-                    count = c;
-                }
-            }
-
-            return best;
         }
 
         private int[] FindPolygonsWithOpenEdges(List<Polygon> polygons, ILookup<Edge, int> lookup, int[] candidates = null!)
@@ -266,7 +236,6 @@ namespace SheetCuttingTools.Flattening
             : candidates.Select(x => (polygons[x], x));
 
             return polys.Select(x => (index: x.Item2, count: x.Item1.GetEdges().Count(e => lookup[e].Count() == 1)))
-                .Where(x => x.count > 0)
                 .OrderByDescending(x => x.count)
                 .Select(x => x.index).ToArray();
         }

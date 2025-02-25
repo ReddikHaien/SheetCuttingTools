@@ -81,13 +81,30 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
                 i++;
             }
 
+            foreach(var group in sheet.Circles)
+            {
+                var idx = categories.IndexOf(group.Key);
+                if (idx == -1)
+                {
+                    categories.Add(group.Key);
+                    idx = categories.Count - 1;
+                }
+
+                var path = new GH_Path(0, DA.Iteration, idx);
+                foreach (var circle in group)
+                {
+                    var c = new Circle(circle.Center.ToRhinoPoint3d(), circle.Radius);
+                    curves.Add(c.ToNurbsCurve(), path);
+                }
+            }
+
             categories.Add("EdgeLabels");
             foreach(var (edge, name) in sheet.BoundaryNames)
             {
                 var (a, b) = sheet.FlattenedSegment.GetPoints(edge);
-                var normal = sheet.FlattenedSegment.BoundaryNormal[edge];
+                sheet.FlattenedSegment.BoundaryNormal.TryGetValue(edge, out var normal);
                 
-                var p = (a + b) / 2 - normal;
+                var p = (a + b) / 2 - normal; 
 
                 var plane = Plane.WorldXY;
 

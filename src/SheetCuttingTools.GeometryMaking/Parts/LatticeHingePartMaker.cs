@@ -21,43 +21,6 @@ namespace SheetCuttingTools.GeometryMaking.Parts
         public double GetRequiredGap(bool maleSide)
             => gapSize;
 
-        public void CreatePart(Edge edge, Vector2d pointA, Vector2d pointB, Vector2d normal, IFlattenedGeometry flattenedGeometry, List<Vector2d> points, List<Edge> edges)
-        {
-
-            // ca                          cb
-            // |                           | rw
-            // z---------------------w     |
-            //                       |     | gs - rw
-            // pa ------------------ q     pb
-
-            var l = pointA.Distance(pointB);
-            var ab = (pointB - pointA).Normalized;
-
-            var q = pointA + ab * l * (1 - hingeWidthPercentage);
-            var w = q + normal * (gapSize - rodWidth);
-
-            var ca = pointA + normal * gapSize;
-            var z = ca - normal * rodWidth;
-
-            var cb = pointB + normal * gapSize;
-
-            points.AddRange([pointA, q]);
-            edges.Add(new(points.Count - 2, points.Count - 1));
-
-            points.AddRange([q, w]);
-            edges.Add(new(points.Count - 2, points.Count - 1));
-
-            points.AddRange([ca, z]);
-            edges.Add(new(points.Count - 2, points.Count - 1));
-
-            points.AddRange([w, z]);
-            edges.Add(new(points.Count - 2, points.Count - 1));
-
-
-            points.AddRange([pointB, cb]);
-            edges.Add(new(points.Count - 2, points.Count - 1));
-        }
-
         public void CreatePart(Edge edge, Vector2d pointA, Vector2d pointB, Vector2d normal, IFlattenedGeometry flattenedGeometry, PartMakerContext context)
         {
             // ca                          cb

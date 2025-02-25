@@ -49,16 +49,19 @@ namespace SheetCuttingTools.GeometryMaking
 
             PartMakerContext partContext = new(false);
 
-            HashSet<Edge> edges = [];
-            List<Vector2d> points = [];
+            //HashSet<Edge> edges = [];
+            //List<Vector2d> points = [];
 
             foreach ((Polygon Original, Polygon placed) in segment.PlacedPolygons)
             {
                 int l = placed.Points.Length;
                 var mid = segment.GetMidPoint2d(placed);
 
-                (Edge, Vector2d)[] normals = new (Edge, Vector2d)[l];
-                foreach (var (edge, i) in placed.GetEdges().Select((x, i) => (x, i)))
+                (Edge placed, Edge original, Vector2d)[] normals = new (Edge, Edge, Vector2d)[l];
+
+                var edges = placed.GetEdges().Zip(Original.GetEdges()).Select((x, i) => (placed: x.First, original: x.Second, index: i));
+
+                foreach (var (edge, original, i) in edges)
                 {
                     var (a, b) = segment.GetPoints(edge);
 
@@ -66,7 +69,7 @@ namespace SheetCuttingTools.GeometryMaking
                         ? hingeMaker.GetRequiredGap(true)
                         : hingeMaker.GetRequiredGap(kinds[edge] is EdgeKind.ConnectionMale);
 
-                    normals[i] = (edge, GeometryMath.NormalToLine(mid, a, b) * distance);
+                    normals[i] = (edge, original, GeometryMath.NormalToLine(mid, a, b) * distance);
                 }
 
                 Vector2d[] newPoints = new Vector2d[l];
@@ -75,8 +78,8 @@ namespace SheetCuttingTools.GeometryMaking
                 {
                     int j = (i + l - 1) % l;
 
-                    var (iEdge, iNormal) = normals[i];
-                    var (jEdge, jNormal) = normals[j];
+                    var (iEdge, _, iNormal) = normals[i];
+                    var (jEdge, _, jNormal) = normals[j];
 
                     var (ia, ib) = segment.GetPoints(iEdge);
                     var (ja, jb) = segment.GetPoints(jEdge);
@@ -91,7 +94,7 @@ namespace SheetCuttingTools.GeometryMaking
                     Vector2d pb = newPoints[i];
                     Vector2d pa = newPoints[j];
 
-                    (Edge edge, Vector2d normal) = normals[i];
+                    (Edge edge, Edge original, Vector2d normal) = normals[i];
 
                     PartMakerContext c = new(kinds[edge] is EdgeKind.ConnectionMale);
 
@@ -103,31 +106,19 @@ namespace SheetCuttingTools.GeometryMaking
                     else
                     {
                         connectionMaker.CreatePart(edge, pa, pb, -normal, segment, c);
-                        names.TryAdd(edge, context.CreateName(edge));
+                        names.TryAdd(edge, context.CreateName(original));
                     }
                     partContext.AddContext(c);
                 }
             }
 
-            var loops = ArrayTransform.CreateEdgeLoops(edges.ToArray());
-
-            List<(string, Vector2d[])> lines = [];
-
-            foreach (var loop in loops)
-            {
-                var line = loop.Select(x => points[x]).ToArray();
-
-                lines.Add(("Geometry", line));
-
-            }
-
             return new Sheet
             {
                 FlattenedSegment = segment,
-                Lines = lines.ToLookup(keySelector: x => x.Item1, elementSelector: x => x.Item2),
+                Lines = partContext.CreateLinesLookup(),
+                Circles = partContext.CreateCircleLookup(),
                 BoundaryNames = names.AsReadOnly(),
             };
-
         }
 
         public enum EdgeKind
