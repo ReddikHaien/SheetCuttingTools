@@ -8,11 +8,16 @@ using SheetCuttingTools.Infrastructure.Math;
 
 namespace SheetCuttingTools.GeometryMaking
 {
-    public class TestGeometryMaker
+    /// <summary>
+    /// Geometry maker that is based on parts
+    /// </summary>
+    /// <param name="hingeMaker">The part maker for hinged edges.</param>
+    /// <param name="connectionMaker">The part maker for connection edges.</param>
+    public class PartGeometryMaker(IPartMaker hingeMaker, IPartMaker connectionMaker)
     {
 
-        private readonly LatticeHingePartMaker hingeMaker = new(1.5);
-        private readonly LatticeHingePartMaker connectionMaker = new LatticeHingePartMaker(0.5);
+        private readonly IPartMaker hingeMaker = hingeMaker;
+        private readonly IPartMaker connectionMaker = connectionMaker;
 
         public Sheet CreateSheet(IFlattenedGeometry segment, GeometryMakerContext context)
         {
@@ -41,6 +46,8 @@ namespace SheetCuttingTools.GeometryMaking
                     context.MarkEdge(original);
                 }
             }
+
+            PartMakerContext partContext = new(false);
 
             HashSet<Edge> edges = [];
             List<Vector2d> points = [];
@@ -77,8 +84,6 @@ namespace SheetCuttingTools.GeometryMaking
                     newPoints[i] = GeometryMath.LineIntersection(ia + iNormal, ib + iNormal, ja + jNormal, jb + jNormal);
                 }
 
-
-
                 for (int i = 0; i < l; i++)
                 {
                     int j = (i + 1) % l;
@@ -88,38 +93,19 @@ namespace SheetCuttingTools.GeometryMaking
 
                     (Edge edge, Vector2d normal) = normals[i];
 
-                    List<Vector2d> np = [];
-                    List<Edge> ne = [];
+                    PartMakerContext c = new(kinds[edge] is EdgeKind.ConnectionMale);
 
+                    
                     if (kinds[edge] is EdgeKind.Hinge)
                     {
-                        hingeMaker.CreatePart(edge, pa, pb, -normal.Normalized, segment, np, ne);
+                        hingeMaker.CreatePart(edge, pa, pb, -normal.Normalized, segment, c);
                     }
                     else
                     {
-                        np.AddRange([pa, pb]);
-                        ne.Add(new Edge(np.Count - 2, np.Count - 1));
-
-                        //connectionMaker.CreatePart(edge, pa, pb, -normal, segment, np, ne);
+                        connectionMaker.CreatePart(edge, pa, pb, -normal, segment, c);
                         names.TryAdd(edge, context.CreateName(edge));
                     }
-                    foreach (var e in ne)
-                    {
-                        var a = points.FindIndex(x => x.EpsilonEqual(np[e.A], 0.01));
-                        if (a == -1)
-                        {
-                            a = points.Count;
-                            points.Add(np[e.A]);
-                        }
-                        var b = points.FindIndex(x => x.EpsilonEqual(np[e.B], 0.01));
-                        if (b == -1)
-                        {
-                            b = points.Count;
-                            points.Add(np[e.B]);
-                        }
-
-                        edges.Add(new(a, b));
-                    }
+                    partContext.AddContext(c);
                 }
             }
 

@@ -13,17 +13,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
+using SheetCuttingTools.GeometryMaking.Parts;
 
 namespace SheetCuttingTools.Grasshopper.Components.GeometryMaking
 {
 
     [Guid("409D08F4-FECC-4A61-B91B-A4134F267808")]
-    public class TestGeometryMakerComponent() : BaseGeometryMaker("Test geometry maker", "TGM", "Component that only generates the boundary and fold edges")
+    public class PartGeometryMakerComponent() : BaseGeometryMaker("Part geometry maker", "PTGM", "Component that generates geometry based on part makers.")
     {
         protected override ToolWorker CreateWorker()
             => new TestGeometryMakerWorker(this);
 
-        protected class TestGeometryMakerWorker(TestGeometryMakerComponent parent) : ToolWorker(parent)
+        protected class TestGeometryMakerWorker(PartGeometryMakerComponent parent) : ToolWorker(parent)
         {
             IFlattenedGeometry[] segment;
             Sheet[] sheet;
@@ -35,7 +36,7 @@ namespace SheetCuttingTools.Grasshopper.Components.GeometryMaking
 
                 try
                 {
-                    var maker = new TestGeometryMaker();
+                    var maker = new PartGeometryMaker(new LatticeHingePartMaker(2), new JaggedConnectorPartMaker(3, 2, 1.5));
                     var context = new GeometryMakerContext();
                     var l = segment.Length;
                     var i = 0;

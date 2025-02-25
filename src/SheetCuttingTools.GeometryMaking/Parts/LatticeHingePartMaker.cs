@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SheetCuttingTools.GeometryMaking.Parts
 {
-    public class LatticeHingePartMaker(double gapSize)
+    public class LatticeHingePartMaker(double gapSize) : IPartMaker
     {
         private readonly double gapSize = gapSize;
 
@@ -56,6 +56,29 @@ namespace SheetCuttingTools.GeometryMaking.Parts
 
             points.AddRange([pointB, cb]);
             edges.Add(new(points.Count - 2, points.Count - 1));
+        }
+
+        public void CreatePart(Edge edge, Vector2d pointA, Vector2d pointB, Vector2d normal, IFlattenedGeometry flattenedGeometry, PartMakerContext context)
+        {
+            // ca                          cb
+            // |                           | rw
+            // z---------------------w     |
+            //                       |     | gs - rw
+            // pa ------------------ q     pb
+
+            var l = pointA.Distance(pointB);
+            var ab = (pointB - pointA).Normalized;
+
+            var q = pointA + ab * l * (1 - hingeWidthPercentage);
+            var w = q + normal * (gapSize - rodWidth);
+
+            var ca = pointA + normal * gapSize;
+            var z = ca - normal * rodWidth;
+
+            var cb = pointB + normal * gapSize;
+
+            context.AddLine([pointA, q, w, z, ca]);
+            context.AddLine([pointB, cb]);
         }
     }
 }
