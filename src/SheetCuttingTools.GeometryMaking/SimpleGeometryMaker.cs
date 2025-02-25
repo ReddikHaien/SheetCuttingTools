@@ -13,7 +13,7 @@ using static SheetCuttingTools.GeometryMaking.PaperGeometryMaker;
 
 namespace SheetCuttingTools.GeometryMaking
 {
-    public class BoundaryGeometryMaker
+    public class SimpleGeometryMaker
     {
         public const string Side = "Geometry.Side";
         public const string Hinge = "Geometry.Fold";

@@ -187,11 +187,11 @@ namespace SheetCuttingTools.Flattening
                 double bestDot = treatDirectionAsPlane ? 1.1 : -0.1;
 
                 var first = polygons[firstIndex];
-                var mid = geometry.GetMidPoint(first);
+                var mid = geometry.GetMidPoint3d(first);
                 var firstEdges = first.GetEdges().ToArray();
                 foreach(var a in firstEdges)
                 {
-                    var aMid = geometry.GetMidPoint(a);
+                    var aMid = geometry.GetMidPoint3d(a);
 
                     var fdir = (mid - aMid).Normalized;
 
@@ -200,7 +200,7 @@ namespace SheetCuttingTools.Flattening
                         if (a == b)
                             continue;
 
-                        var bmid = geometry.GetMidPoint(b);
+                        var bmid = geometry.GetMidPoint3d(b);
 
                         var sdir = (bmid - mid).Normalized;
 

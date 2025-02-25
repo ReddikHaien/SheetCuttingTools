@@ -16,14 +16,14 @@ using System.Runtime.InteropServices;
 
 namespace SheetCuttingTools.Grasshopper.Components.GeometryMaking
 {
-    [Guid("60C50294-016F-4E62-B0E2-1A4B063DB131")]
-    public class SimpleGeometryMakerComponent() : BaseGeometryMaker("Simple geometry maker", "SGM", "Component that only generates the boundary and fold edges")
+
+    [Guid("409D08F4-FECC-4A61-B91B-A4134F267808")]
+    public class TestGeometryMakerComponent() : BaseGeometryMaker("Test geometry maker", "TGM", "Component that only generates the boundary and fold edges")
     {
         protected override ToolWorker CreateWorker()
-            => new SimpleGeometryMakerWorker(this);
+            => new TestGeometryMakerWorker(this);
 
-
-        protected class SimpleGeometryMakerWorker(SimpleGeometryMakerComponent parent) : ToolWorker(parent)
+        protected class TestGeometryMakerWorker(TestGeometryMakerComponent parent) : ToolWorker(parent)
         {
             IFlattenedGeometry[] segment;
             Sheet[] sheet;
@@ -35,7 +35,7 @@ namespace SheetCuttingTools.Grasshopper.Components.GeometryMaking
 
                 try
                 {
-                    var maker = new SimpleGeometryMaker();
+                    var maker = new TestGeometryMaker();
                     var context = new GeometryMakerContext();
                     var l = segment.Length;
                     var i = 0;
