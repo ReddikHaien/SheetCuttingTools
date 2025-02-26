@@ -13,6 +13,20 @@ namespace SheetCuttingTools.Infrastructure.Extensions
 {
     public static class IGeometryExtensions
     {
+
+        public static Vector2d[] GetPoints(this IFlattenedGeometry geometry, Polygon polygon, Vector2d[] buf = null!)
+        {
+            if (buf is null || buf.Length < polygon.Points.Length)
+            {
+                buf = new Vector2d[polygon.Points.Length];
+            }
+
+            for(int i = 0; i < polygon.Points.Length; i++)
+            {
+                buf[i] = geometry.Points[polygon.Points[i]];
+            }
+            return buf;
+        }
         public static (Vector2d A, Vector2d) GetPoints(this IFlattenedGeometry geometry, Edge edge)
             => (geometry.Points[edge.A], geometry.Points[edge.B]);
 
@@ -30,6 +44,30 @@ namespace SheetCuttingTools.Infrastructure.Extensions
                 arr[i] = geometry.Vertices[polygon.Points[i]];
             }
             return arr;
+        }
+
+        public static Vector2d GetMidPoint2d(this IFlattenedGeometry geometry, Edge edge)
+        {
+            (Vector2d a, Vector2d b) = geometry.GetPoints(edge);
+            return ( a + b) / 2;
+        }
+
+        public static Vector2d GetMidPoint2d(this IFlattenedGeometry geometry, Polygon polygon)
+        {
+            var l = polygon.Points.Length;
+            return polygon.Points.Select(x => geometry.Points[x]).Aggregate((a, b) => a + b) / l;
+        }
+
+        public static Vector3d GetMidPoint3d(this IGeometry geometry, Edge edge)
+        {
+            (Vector3d a, Vector3d b) = geometry.GetVertices(edge);
+            return (a + b) / 2;
+        }
+
+        public static Vector3d GetMidPoint3d(this IGeometry geometry, Polygon polygon)
+        {
+            var l = polygon.Points.Length;
+            return polygon.Points.Select(i => geometry.Vertices[i]).Aggregate((a, b) => a + b) / l;
         }
 
         public static DMesh3 ConvertToDMesh3(this IGeometry geometry)

@@ -240,7 +240,7 @@ namespace SheetCuttingTools.Flattening
                 indexWhenPlaced[i] = (Points.Count - 1, original);
             }
 
-            foreach (var (pa, pb) in indexWhenPlaced.SlidingWindow())
+            foreach (var (pa, pb) in indexWhenPlaced.SlidingWindow(loop: true))
             {
                 Edge original = new(pa.original, pb.original);
                 Edge mapped = new(pa.flattened, pb.flattened);
@@ -271,7 +271,7 @@ namespace SheetCuttingTools.Flattening
                 else
                 {
                     Boundary.Remove((original, mapped));
-                    Normals.Remove(mapped);
+                    //Normals.Remove(mapped);
                 }
                 OpenEdges[original] = new OpenEdgeEntry
                 {

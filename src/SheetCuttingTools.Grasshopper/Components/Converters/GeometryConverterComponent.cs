@@ -3,14 +3,17 @@ using Grasshopper.Kernel.Types;
 using SheetCuttingTools.Grasshopper.Helpers;
 using SheetCuttingTools.Grasshopper.Models;
 using System;
+using System.Drawing;
 using System.Runtime.InteropServices;
 
 namespace SheetCuttingTools.Grasshopper.Components.Converters
 {
     [Guid("1BB6D6B6-74DB-489D-9401-263F552F3FE2")]
-    public class GeometryConverterComponent() : GH_Component("Geometry converter", "GC", "Converts a Rhino object into a geometry object", Constants.Category, Constants.HelperCategories)
+    public class GeometryConverterComponent() : GH_Component("Object to Geometry", "O2G", "Converts a Rhino object into a geometry object", Constants.Category, Constants.HelperCategories)
     {
         public override Guid ComponentGuid => GetType().GUID;
+
+        protected override Bitmap Icon => Icons.Helpers_GeometryConverter;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {

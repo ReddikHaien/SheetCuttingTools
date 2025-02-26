@@ -9,6 +9,7 @@ using SheetCuttingTools.Grasshopper.Models;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -17,11 +18,12 @@ using System.Threading.Tasks;
 namespace SheetCuttingTools.Grasshopper.Components.GeometryMaking;
 
 [Guid("ECC6978D-0F97-44E6-A531-8557B16F33DD")]
-public class PaperGeometryMakerComponent() : BaseGeometryMaker("Paper Geometry Maker", "PGM", "Creates a sheet for paper based cutting")
+public class PaperGeometryMakerComponent() : BaseGeometryMaker("Paper geometry maker", "PGM", "Creates a sheet for paper based cutting")
 {
+    protected override Bitmap Icon => Icons.GeometryMaker_PaperGeometryMaker;
+
     protected override ToolWorker CreateWorker()
         => new PaperGeometryMakerWorker(this);
-
 
     protected class PaperGeometryMakerWorker(PaperGeometryMakerComponent parent) : ToolWorker(parent)
     {

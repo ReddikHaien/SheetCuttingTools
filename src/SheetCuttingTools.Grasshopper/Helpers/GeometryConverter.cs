@@ -38,7 +38,7 @@ namespace SheetCuttingTools.Grasshopper.Helpers
         private static IGeometry CreateGeometry(this SubD subD)
         {
             subD = (SubD)subD.Duplicate();
-            subD.Subdivide(2);
+            subD.Subdivide(1);
             var boundingBox = subD.GetBoundingBox(true);
             OctTree tree = new(boundingBox.Min.ToG3Vector3d(), boundingBox.Max.ToG3Vector3d(), 0.01);
 

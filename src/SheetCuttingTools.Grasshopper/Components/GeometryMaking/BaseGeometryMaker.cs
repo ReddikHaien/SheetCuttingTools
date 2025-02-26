@@ -9,6 +9,5 @@ namespace SheetCuttingTools.Grasshopper.Components.GeometryMaking
 {
     public abstract class BaseGeometryMaker(string name, string nickname, string description) : BaseToolComponent(name, nickname, description, Constants.Category, Constants.GeometryMakingCategory)
     {
-        protected override Bitmap Icon => base.Icon;
     }
 }

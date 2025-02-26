@@ -118,13 +118,31 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="Flattening.GreedyFlattener" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>icons\flattening\greedy-flattener.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="GeometryMaker.PaperGeometryMaker" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>icons\geometry-making\paper-geometry-maker.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Helper.SheetUnpacking" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>icons\helpers\sheet-unpacking.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Helpers.GeometryConverter" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>icons\helpers\geometry-converter.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Helpers.MeshConverter" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>icons\helpers\mesh-converter.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Segmentation.CakeSlicerSegmentor" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>icons\segmentation\cake-slicer-segmentor.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Segmentation.GreedySegmentor" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>icons\segmentation\greedy-segmentator.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Segmentation.LayerSlicerSegmentor" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>icons\segmentation\layer-slicer-segmentor.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Unrolling.GreedyUnroller" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>icons\flattening\greedy-flattener.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Unrolling.StripUnroller" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>icons\flattening\strip-unroller.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

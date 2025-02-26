@@ -22,6 +22,11 @@ namespace SheetCuttingTools.Abstractions.Models
         public ILookup<string, Vector2d[]> Lines { get; set; }
 
         /// <summary>
+        /// The circles in the sheet, grouped by their category.
+        /// </summary>
+        public ILookup<string, Circle2d> Circles { get; set; }
+
+        /// <summary>
         /// name of boundary edges, used to identity matching edges on different geometries
         /// </summary>
         public IReadOnlyDictionary<Edge, string> BoundaryNames {  get; set; }
