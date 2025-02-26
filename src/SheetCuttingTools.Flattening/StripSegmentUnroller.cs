@@ -206,6 +206,7 @@ namespace SheetCuttingTools.Flattening
 
                         if (Math.Abs(fdir.Dot(sdir)) < 0.9)
                             continue;
+
                         double dot = Math.Abs(fdir.Dot(preferredStripDirection));
                         if (treatDirectionAsPlane ? dot < bestDot : dot > bestDot)
                         {

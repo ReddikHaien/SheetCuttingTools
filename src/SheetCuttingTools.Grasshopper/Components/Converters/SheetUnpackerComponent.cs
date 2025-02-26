@@ -1,4 +1,5 @@
-﻿using Grasshopper;
+﻿using g3;
+using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
@@ -81,7 +82,9 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
                 i++;
             }
 
-            foreach(var group in sheet.Circles)
+            var circles = sheet.Circles ?? Enumerable.Empty<Circle2d>().ToLookup(keySelector: _ => "");
+
+            foreach(var group in circles)
             {
                 var idx = categories.IndexOf(group.Key);
                 if (idx == -1)

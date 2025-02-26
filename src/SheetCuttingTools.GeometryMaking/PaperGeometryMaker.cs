@@ -107,7 +107,7 @@ namespace SheetCuttingTools.GeometryMaking
                
                 List<Vector2d> boundaryLine = [];
                 List<(Edge, int)> taps = [];
-                foreach(var (a, b) in line.SlidingWindow())
+                foreach(var (a, b) in line.SlidingWindow(loop: false))
                 {
                     if (a == b)
                         continue;
@@ -140,7 +140,7 @@ namespace SheetCuttingTools.GeometryMaking
                     var (pa, pb) = segment.GetPoints(edge);
                     
                     var u = pb - pa;
-                    var v = segment.BoundaryNormal[edge];
+                    segment.BoundaryNormal.TryGetValue(edge, out var v);
 
                     var p2 = v * 3 + u * 0.25f;
                     var p3 = v * 3 + u * 0.75f;
@@ -156,7 +156,7 @@ namespace SheetCuttingTools.GeometryMaking
                             || GeometryMath.LineOverlap(p2 + pa, p3 + pa, pc, pd)
                             || GeometryMath.LineOverlap(p3 + pa, pb, pc, pd))
                         {
-                            overlap = true;
+                            //overlap = true;
                             break;
                         }
                     }

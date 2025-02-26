@@ -106,7 +106,7 @@ namespace SheetCuttingTools.GeometryMaking
             {
 
                 List<Vector2d> boundaryLine = [];
-                foreach (var (a, b) in line.SlidingWindow())
+                foreach (var (a, b) in line.SlidingWindow(loop: false))
                 {
                     if (a == b)
                         continue;
