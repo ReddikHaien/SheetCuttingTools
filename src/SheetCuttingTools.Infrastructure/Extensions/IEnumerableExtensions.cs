@@ -12,7 +12,14 @@ namespace SheetCuttingTools.Infrastructure.Extensions
 {
     public static class IEnumerableExtensions
     {
-        public static IEnumerable<(T First, T Second)> SlidingWindow<T>(this IEnumerable<T> values)
+        /// <summary>
+        /// Creates a sliding window iterator over the items.
+        /// </summary>
+        /// <typeparam name="T">The element type.</typeparam>
+        /// <param name="values">The enumerable of items to iterate.</param>
+        /// <param name="loop">If there iterator should yield a tuple for the first and last value.</param>
+        /// <returns></returns>
+        public static IEnumerable<(T First, T Second)> SlidingWindow<T>(this IEnumerable<T> values, bool loop = false)
         {
             var e = values.GetEnumerator();
             
@@ -31,7 +38,7 @@ namespace SheetCuttingTools.Infrastructure.Extensions
             }
 
             //loop
-            if (more)
+            if (more && loop)
                 yield return (first, initial);
         }
 

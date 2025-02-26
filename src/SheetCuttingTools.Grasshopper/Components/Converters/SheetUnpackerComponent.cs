@@ -1,4 +1,5 @@
-﻿using Grasshopper;
+﻿using g3;
+using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
@@ -24,10 +25,12 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
         protected override Bitmap Icon => Icons.Helper_SheetUnpacking;
 
         public override Guid ComponentGuid => GetType().GUID;
+        
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Sheet", "S", "A Sheet to unpack into a tree", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Text Height", "T", "The height of the text", GH_ParamAccess.item, 3);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -42,6 +45,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
             if(!DA.GetData(0, ref sheetWrapper))
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Could not get data!");
+                return;
             }
 
             Sheet sheet = null!;
@@ -55,6 +59,11 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Provided value is not a sheet");
                 return;
             }
+
+            GH_Number textHeight = new();
+            if (!DA.GetData(1, ref textHeight))
+                textHeight.Value = 3;
+
 
             DataTree<Curve> curves = new();
             List<string> categories = [];
@@ -73,13 +82,32 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
                 i++;
             }
 
+            var circles = sheet.Circles ?? Enumerable.Empty<Circle2d>().ToLookup(keySelector: _ => "");
+
+            foreach(var group in circles)
+            {
+                var idx = categories.IndexOf(group.Key);
+                if (idx == -1)
+                {
+                    categories.Add(group.Key);
+                    idx = categories.Count - 1;
+                }
+
+                var path = new GH_Path(0, DA.Iteration, idx);
+                foreach (var circle in group)
+                {
+                    var c = new Circle(circle.Center.ToRhinoPoint3d(), circle.Radius);
+                    curves.Add(c.ToNurbsCurve(), path);
+                }
+            }
+
             categories.Add("EdgeLabels");
             foreach(var (edge, name) in sheet.BoundaryNames)
             {
                 var (a, b) = sheet.FlattenedSegment.GetPoints(edge);
-                var normal = sheet.FlattenedSegment.BoundaryNormal[edge];
+                sheet.FlattenedSegment.BoundaryNormal.TryGetValue(edge, out var normal);
                 
-                var p = (a + b) / 2 - normal;
+                var p = (a + b) / 2 - normal; 
 
                 var plane = Plane.WorldXY;
 
@@ -89,7 +117,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
                 {
                     PlainText = name,
                     Plane = plane,
-                    TextHeight = 3,
+                    TextHeight = textHeight.Value,
                 };
 
                 var c = obj.Explode();
