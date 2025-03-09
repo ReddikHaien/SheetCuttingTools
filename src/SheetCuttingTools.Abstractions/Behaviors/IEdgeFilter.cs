@@ -10,6 +10,8 @@ namespace SheetCuttingTools.Abstractions.Behaviors
 {
     public interface IEdgeFilter : IBehavior
     {
+        public new const string RootName = $"{IBehavior.RootName}/EdgeFilter";
+
         /// <summary>
         /// returns a boolean value, that will be used to filter the provided edge.
         /// </summary>

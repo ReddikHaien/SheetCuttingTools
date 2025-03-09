@@ -15,8 +15,10 @@ namespace SheetCuttingTools.Abstractions.Models.Geometry
         public IReadOnlyList<Vector3d> Vertices { get; init; } = [];
 
         public IReadOnlyList<Vector3f> Normals { get; init; } = [];
+
         public IGeometry? Parent { get; init; }
 
         public Vector3d Center3d { get; init; }
+        
     }
 }

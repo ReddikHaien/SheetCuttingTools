@@ -1,4 +1,5 @@
 ﻿using g3;
+using SheetCuttingTools.Abstractions.Behaviors;
 using SheetCuttingTools.Abstractions.Contracts;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.GeometryMaking.Models;
@@ -47,7 +48,7 @@ namespace SheetCuttingTools.GeometryMaking
                 }
             }
 
-            PartMakerContext partContext = new(false);
+            PartGeometryOutput partContext = new();
 
             //HashSet<Edge> edges = [];
             //List<Vector2d> points = [];
@@ -61,19 +62,33 @@ namespace SheetCuttingTools.GeometryMaking
 
                 var edges = placed.GetEdges().Zip(Original.GetEdges()).Select((x, i) => (placed: x.First, original: x.Second, index: i));
 
+                PartMakerContext2[] edgeContext = new PartMakerContext2[l]; 
+
                 foreach (var (edge, original, i) in edges)
                 {
                     var (a, b) = segment.GetPoints(edge);
 
+                    edgeContext[i] = new PartMakerContext2
+                    {
+                        A = a,
+                        B = b,
+                        OriginalA = a,
+                        OriginalB = b,
+                        Edge = edge,
+                        MaleSide = kinds[edge] is EdgeKind.ConnectionMale,
+                        U = (b - a).Normalized,
+                        V = -GeometryMath.NormalToLine(mid, a, b)
+                    };
+
                     double distance = kinds[edge] is EdgeKind.Hinge
-                        ? hingeMaker.GetRequiredGap(true)
-                        : hingeMaker.GetRequiredGap(kinds[edge] is EdgeKind.ConnectionMale);
+                        ? hingeMaker.GetRequiredGap(edgeContext[i])
+                        : connectionMaker.GetRequiredGap(edgeContext[i]);
 
                     normals[i] = (edge, original, GeometryMath.NormalToLine(mid, a, b) * distance);
                 }
 
-                Vector2d[] newPoints = new Vector2d[l];
-
+                (Vector2d Moved, Vector2d Original)[] newPoints = new (Vector2d, Vector2d)[l];
+                
                 for (int i = 0; i < l; i++)
                 {
                     int j = (i + l - 1) % l;
@@ -84,32 +99,47 @@ namespace SheetCuttingTools.GeometryMaking
                     var (ia, ib) = segment.GetPoints(iEdge);
                     var (ja, jb) = segment.GetPoints(jEdge);
 
-                    newPoints[i] = GeometryMath.LineIntersection(ia + iNormal, ib + iNormal, ja + jNormal, jb + jNormal);
+                    var shared = iEdge.ContainsPoint(jEdge.A)
+                        ? ja
+                        : jb;
+
+                    newPoints[i] =
+                    (
+                        GeometryMath.LineIntersection(ia + iNormal, ib + iNormal, ja + jNormal, jb + jNormal),
+                        shared
+                    );
                 }
+
+                PartGeometryOutput c = new();
 
                 for (int i = 0; i < l; i++)
                 {
                     int j = (i + 1) % l;
 
-                    Vector2d pb = newPoints[i];
-                    Vector2d pa = newPoints[j];
+                    (Vector2d pb, Vector2d ob) = newPoints[i];
+                    (Vector2d pa, Vector2d oa) = newPoints[j];
+
+                    var ctx = edgeContext[i];
+                    ctx.A = pa;
+                    ctx.B = pb;
+                    ctx.OriginalA = oa;
+                    ctx.OriginalB = ob;
+                    ctx.U = (pb - pa).Normalized;
 
                     (Edge edge, Edge original, Vector2d normal) = normals[i];
 
-                    PartMakerContext c = new(kinds[edge] is EdgeKind.ConnectionMale);
-
-                    
                     if (kinds[edge] is EdgeKind.Hinge)
                     {
-                        hingeMaker.CreatePart(edge, pa, pb, -normal.Normalized, segment, c);
+                        hingeMaker.CreatePart(ctx, c);
                     }
                     else
                     {
-                        connectionMaker.CreatePart(edge, pa, pb, -normal, segment, c);
+                        connectionMaker.CreatePart(ctx, c);
                         names.TryAdd(edge, context.CreateName(original));
                     }
-                    partContext.AddContext(c);
                 }
+
+                partContext.AddContext(c);
             }
 
             return new Sheet

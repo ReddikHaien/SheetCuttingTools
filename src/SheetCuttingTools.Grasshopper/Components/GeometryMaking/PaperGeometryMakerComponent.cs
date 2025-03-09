@@ -1,6 +1,7 @@
 ﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 using GrasshopperAsyncComponent;
+using Rhino.Runtime;
 using SheetCuttingTools.Abstractions.Contracts;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.GeometryMaking;

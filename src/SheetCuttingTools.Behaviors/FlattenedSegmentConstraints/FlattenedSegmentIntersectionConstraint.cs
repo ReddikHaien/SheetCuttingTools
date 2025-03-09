@@ -11,7 +11,7 @@ namespace SheetCuttingTools.Behaviors.FlattenedSegmentConstraints
     public class FlattenedSegmentIntersectionConstraint : IFlattenedSegmentConstraint
     {
         public string Name()
-            => "Behavior/FlattenedSegmentConstraint/IntersectionConstraint";
+            => $"{IFlattenedSegmentConstraint.RootName}/Intersection";
 
         public bool ValidateFlatSegment(in FlattenedSegmentCandidate candidate)
         {

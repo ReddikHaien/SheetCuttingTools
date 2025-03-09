@@ -1,4 +1,5 @@
 ﻿using g3;
+using SheetCuttingTools.Abstractions.Behaviors;
 using SheetCuttingTools.Abstractions.Contracts;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Infrastructure.Extensions;
@@ -12,36 +13,47 @@ namespace SheetCuttingTools.GeometryMaking.Parts
 {
     public class LatticeHingePartMaker(double gapSize) : IPartMaker
     {
+        private const string name = $"{IPartMaker.RootName}/LatticeHinge";
+
         private readonly double gapSize = gapSize;
 
         private readonly double hingeWidthPercentage = 0.1;
 
         private readonly double rodWidth = 0.5;
 
-        public double GetRequiredGap(bool maleSide)
+        public double GetRequiredGap(IPartMakerContext ctx)
             => gapSize;
 
-        public void CreatePart(Edge edge, Vector2d pointA, Vector2d pointB, Vector2d normal, IFlattenedGeometry flattenedGeometry, PartMakerContext context)
+        public void CreatePart(IPartMakerContext context, IPartGeometryOutput geometryOutput)
         {
-            // ca                          cb
+            // oa                          ob
             // |                           | rw
             // z---------------------w     |
             //                       |     | gs - rw
-            // pa ------------------ q     pb
+            // a---------------------q     b
 
-            var l = pointA.Distance(pointB);
-            var ab = (pointB - pointA).Normalized;
+            var oa = context.OriginalA;
+            var ob = context.OriginalB;
+            var a = context.A;
+            var b = context.B;
+            var ab = context.U;
 
-            var q = pointA + ab * l * (1 - hingeWidthPercentage);
+            var normal = context.V;
+
+            var l = a.Distance(b);
+            
+            var q = a + ab * l * (1 - hingeWidthPercentage);
             var w = q + normal * (gapSize - rodWidth);
 
-            var ca = pointA + normal * gapSize;
+            var ca = a + normal * gapSize;
             var z = ca - normal * rodWidth;
 
-            var cb = pointB + normal * gapSize;
+            var cb = b + normal * gapSize;
 
-            context.AddLine([pointA, q, w, z, ca]);
-            context.AddLine([pointB, cb]);
+            geometryOutput.AddLine([a, q, w, z, oa]);
+            geometryOutput.AddLine([b, ob]);
         }
+
+        public string Name() => name;
     }
 }
