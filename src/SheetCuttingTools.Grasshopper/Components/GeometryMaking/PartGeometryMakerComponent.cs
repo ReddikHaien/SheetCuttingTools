@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using SheetCuttingTools.GeometryMaking.Parts;
+using SheetCuttingTools.Abstractions.Behaviors;
 
 namespace SheetCuttingTools.Grasshopper.Components.GeometryMaking
 {
@@ -27,16 +28,21 @@ namespace SheetCuttingTools.Grasshopper.Components.GeometryMaking
         protected class TestGeometryMakerWorker(PartGeometryMakerComponent parent) : ToolWorker(parent)
         {
             IFlattenedGeometry[] segment;
+
+            IPartMaker hingeMakers;
+
+            IPartMaker edgeMakers;
+
             Sheet[] sheet;
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
-                if (segment is null)
+                if (segment is null || hingeMakers is null || edgeMakers is null)
                     return;
 
                 try
                 {
-                    var maker = new PartGeometryMaker(new LatticeHingePartMaker(2), new JaggedConnectorPartMaker(3, 1, 0.8));
+                    var maker = new PartGeometryMaker(hingeMakers, edgeMakers);
                     var context = new GeometryMakerContext();
                     var l = segment.Length;
                     var i = 0;
@@ -85,11 +91,35 @@ namespace SheetCuttingTools.Grasshopper.Components.GeometryMaking
                 {
                     throw new InvalidOperationException("Non flattened geometry provided");
                 }
+
+                GH_ObjectWrapper hingeMaker = new();
+                if (!DA.GetData(0, ref hingeMaker))
+                {
+                    AddErrorMessage("Missing hinge maker");
+                    return;
+                }
+
+                GH_ObjectWrapper connectionMaker = new();
+
+                if (!DA.GetData(1, ref connectionMaker))
+                {
+                    AddErrorMessage("Missing hinge maker");
+                    return;
+                }
+
+                this.hingeMakers = hingeMaker.Value as IPartMaker;
+                this.edgeMakers = connectionMaker.Value as IPartMaker;
+                if(this.hingeMakers is null ||  this.edgeMakers is null)
+                {
+                    AddErrorMessage("Invalid part makers provided");
+                }
             }
 
             public override void RegisterInputsParams(GH_InputParamManager pManager)
             {
                 pManager.AddGenericParameter("Flattened Geometry", "F", "The flattened segment to process", GH_ParamAccess.list);
+                pManager.AddGenericParameter("Hinge maker", "H", "Part maker for hinges", GH_ParamAccess.item);
+                pManager.AddGenericParameter("Edge maker", "E", "Part maker for boundary edges", GH_ParamAccess.item);
             }
 
             public override void RegisterOutputParams(GH_OutputParamManager pManager)

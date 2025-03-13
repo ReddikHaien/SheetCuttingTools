@@ -4,10 +4,175 @@ using SheetCuttingTools.Abstractions.Contracts;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Flattening.Builder;
 using SheetCuttingTools.Infrastructure.Extensions;
+using SheetCuttingTools.Infrastructure.Progress;
 using System.Diagnostics;
+
+using PolygonIndex = int;
 
 namespace SheetCuttingTools.Flattening
 {
+    public class StripSegmentUnroller2(IFlattenedSegmentConstraint[] flattenedGeometryConstraints, bool direction)
+    {
+
+        public IFlattenedGeometry[] UnrollSegment(IGeometry geometry, IProgress<double> progress, CancellationToken cancellationToken = default)
+        {
+            //List of polygons to be placed.
+            List<int> polygons = [.. geometry.Polygons.Select((_, i) => i)];
+
+            //lookup of edges and their associated polygons.
+            MutableLookup<Edge, PolygonIndex> edges = new(polygons.SelectMany((x, i) => geometry.Polygons[x].GetEdges().Select(y => (y, i))).ToLookup(keySelector: x => x.y, elementSelector: x => x.i));
+
+            Dictionary<PolygonIndex, int> priority = new(polygons.Select((x, i) => KeyValuePair.Create(i, geometry.Polygons[x].GetEdges().Any(x => edges[x].Count == 1) ? 0 : -1)));
+
+
+            List<IFlattenedGeometry> geos = [];
+
+            while (true)
+            {
+                var geo = CreatedStirp(polygons, edges, priority, geometry, cancellationToken);
+                if (geo is null)
+                    break;
+                geos.Add(geo);
+            }
+
+
+            return [.. geos];
+        }
+
+        private IFlattenedGeometry? CreatedStirp(List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry, CancellationToken cancellationToken = default)
+        {
+            PolygonIndex a = FindFirstPolygon(polygons, edges, priority);
+
+            if (a == -1)
+            {
+                return null;
+            }
+
+            var builder = new FlattenedGeometryBuilder(geometry, flattenedGeometryConstraints);
+            List<PolygonIndex> added = [];
+            int maxPriority = -1;
+
+            builder.AddPolygon(geometry.Polygons[a]);
+            added.Add(a);
+
+            maxPriority = Math.Max(maxPriority, priority[a]);
+
+            var b = TakeNextPolygon(a, -1, polygons, edges, priority, geometry);
+            
+            while (b > -1)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!builder.AddPolygon(geometry.Polygons[b]))
+                    break;
+                added.Add(b);
+                maxPriority = Math.Max(maxPriority, priority[b]);
+                RemovePolygonFromState(a, polygons, edges, priority, geometry);
+                int o = a;
+                a = b;
+                b = TakeNextPolygon(a, o, polygons, edges, priority, geometry);
+            }
+
+            RemovePolygonFromState(a, polygons, edges, priority, geometry);
+
+            RemoveAndCleanUp(added, edges, priority, geometry, maxPriority);
+
+            return builder.ToFlattenedGeometry();
+        }
+
+        private PolygonIndex FindFirstPolygon(List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority)
+        {
+            return polygons
+                .Where(i => priority[i] > -1)
+                .OrderBy(i => priority[i])
+                .FirstOrDefault(-1);
+        }
+
+        private void RemoveAndCleanUp(List<PolygonIndex> addedPolygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry, int maxPriority)
+        {
+            foreach (var added in addedPolygons)
+            {
+                var poly = geometry.Polygons[added];
+                foreach (var edge in poly.GetEdges())
+                {
+                    foreach(var neighbor in edges[edge])
+                    {
+                        if (neighbor == added)
+                            continue;
+
+                        if (priority[neighbor] == -1)
+                        {
+                            priority[neighbor] = maxPriority + 1;
+                        }
+                    }
+                    edges.RemoveElement(edge, added);
+                }
+            }
+
+
+
+        }
+
+        private void RemovePolygonFromState(PolygonIndex polygon, List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry)
+        {
+            var poly = geometry.Polygons[polygon];
+
+            polygons.Remove(polygon);
+
+            priority[polygon] = -2;
+        }
+
+        private PolygonIndex TakeNextPolygon(int prev, int prevprev, List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry)
+        {
+            // Who can be placed.
+            var candidatesEnumerable = edges
+                .Where(x => x.Contains(prev)) // all neighbors
+                .SelectMany(x => x) // flatten
+                .Where(x => x != prev); // remove previous
+
+            if (prevprev > -1)
+            {
+                candidatesEnumerable = candidatesEnumerable
+                    .Where(c => !geometry.Polygons[prevprev].ContainsSharedPoints(geometry.Polygons[c]));
+            }
+
+            var candidates = candidatesEnumerable.ToArray();
+
+            // true  - prioritize inside of model.
+            // false - prioritize boundaries of model.
+
+            IEnumerable<PolygonIndex> selector = null!; 
+            if (!direction)
+            {
+                selector = candidates
+                    .Where(i => priority[i] >= -1)
+                    .Select(i => (i, c: geometry.Polygons[i].GetEdges().Count(x => edges[x].Count == 1)))
+                    .OrderByDescending(t => t.c)
+                    .Where(t => t.c > 0)
+                    .Select(t => t.i);
+            }
+            else
+            {
+                selector = candidates
+                    .Where(i => priority[i] >= -1)
+                    .Select(i => (i, c: geometry.Polygons[i].GetEdges().Count(x => edges[x].Count > 1)))
+                    .OrderByDescending(t => t.c)
+                    .ThenByDescending(t => priority[t.i])
+                    //.Where(t => t.c > 0)
+                    .Select(t => t.i);
+            }
+
+            var test = candidates
+                    .Where(i => priority[i] >= -1)
+                    .Select(i => (i, c: geometry.Polygons[i].GetEdges().Count(x => edges[x].Count > 1)))
+                    .OrderByDescending(t => t.c)
+                    .ThenByDescending(t => priority[t.i])
+                    .ToArray();
+
+            return selector
+                .FirstOrDefault(-1);
+        }
+    }
+
     /// <summary>
     /// A strip unroller
     /// </summary>
