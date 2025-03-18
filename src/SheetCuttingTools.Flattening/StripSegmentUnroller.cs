@@ -3,8 +3,8 @@ using SheetCuttingTools.Abstractions.Behaviors;
 using SheetCuttingTools.Abstractions.Contracts;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Flattening.Builder;
+using SheetCuttingTools.Flattening.Models;
 using SheetCuttingTools.Infrastructure.Extensions;
-using SheetCuttingTools.Infrastructure.Progress;
 using System.Diagnostics;
 
 using PolygonIndex = int;
@@ -13,7 +13,6 @@ namespace SheetCuttingTools.Flattening
 {
     public class StripSegmentUnroller2(IFlattenedSegmentConstraint[] flattenedGeometryConstraints, bool direction)
     {
-
         public IFlattenedGeometry[] UnrollSegment(IGeometry geometry, IProgress<double> progress, CancellationToken cancellationToken = default)
         {
             //List of polygons to be placed.
@@ -29,18 +28,20 @@ namespace SheetCuttingTools.Flattening
 
             while (true)
             {
-                var geo = CreatedStirp(polygons, edges, priority, geometry, cancellationToken);
+
+                var geo = CreatedStrip(polygons, edges, priority, geometry, cancellationToken);
                 if (geo is null)
                     break;
-                geos.Add(geo);
+                geos.AddRange(geo);
             }
 
 
             return [.. geos];
         }
 
-        private IFlattenedGeometry? CreatedStirp(List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry, CancellationToken cancellationToken = default)
+        private IFlattenedGeometry[]? CreatedStrip(List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry, CancellationToken cancellationToken = default)
         {
+
             PolygonIndex a = FindFirstPolygon(polygons, edges, priority);
 
             if (a == -1)
@@ -48,23 +49,51 @@ namespace SheetCuttingTools.Flattening
                 return null;
             }
 
-            var builder = new FlattenedGeometryBuilder(geometry, flattenedGeometryConstraints);
+            //var builder = new FlattenedGeometryBuilder(geometry, []);
             List<PolygonIndex> added = [];
             int maxPriority = -1;
 
-            builder.AddPolygon(geometry.Polygons[a]);
+            //builder.AddPolygon(geometry.Polygons[a], out Polygon? placed);
+            //foreach (var e in placed!.Value.GetEdges())
+            //{
+            //    edgeKinds[e] = 0;
+            //}
+
             added.Add(a);
 
             maxPriority = Math.Max(maxPriority, priority[a]);
 
             var b = TakeNextPolygon(a, -1, polygons, edges, priority, geometry);
-            
+
             while (b > -1)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (!builder.AddPolygon(geometry.Polygons[b]))
-                    break;
+                //if (!builder.AddPolygon(geometry.Polygons[b], out placed))
+                //    break;
+
                 added.Add(b);
+                //Edge[] sharedEdges = new Edge[geometry.Polygons[b].Points.Length];
+                //int counter = 0;
+                ////foreach(var e2 in placed.Value.GetEdges())
+                ////{
+                ////    // if an edge is already added, mark it as interior(1).
+                ////    if (!edgeKinds.TryAdd(e2, 0)){
+                ////        edgeKinds[e2] = 1;
+                ////        sharedEdges[counter++] = e2;
+                ////    }
+                ////}
+
+                //for(int i = 0; i < counter; i++)
+                //{
+                //    Edge e2 = sharedEdges[i];
+
+                //    //Mark all connecting edges to an interior edge as side edge (2)
+                //    //foreach(var sideEdge in edgeKinds.Keys.Where(e => e != e2 && e.HasSharedPoint(e2)))
+                //    //{
+                //    //    edgeKinds[sideEdge] = 2;
+                //    //}
+                //}
+
                 maxPriority = Math.Max(maxPriority, priority[b]);
                 RemovePolygonFromState(a, polygons, edges, priority, geometry);
                 int o = a;
@@ -76,8 +105,58 @@ namespace SheetCuttingTools.Flattening
 
             RemoveAndCleanUp(added, edges, priority, geometry, maxPriority);
 
-            return builder.ToFlattenedGeometry();
+            List<IFlattenedGeometry> split = [];
+
+            FlattenedGeometryBuilder builder = new(geometry, flattenedGeometryConstraints);
+            Dictionary<Edge, int> edgeKinds = [];
+
+            for (int i = 0; i < added.Count; i++)
+            {
+                var polygon = geometry.Polygons[added[i]];
+
+                if (!builder.AddPolygon(polygon, out var placed))
+                {
+                    if (builder.Polygons.Count > 0)
+                        split.Add(ToFlattenedStripGeometry(builder, edgeKinds));
+                    builder = new(geometry, flattenedGeometryConstraints);
+                    edgeKinds = [];
+
+                    if (!builder.AddPolygon(polygon, out placed))
+                        throw new InvalidOperationException("Unable to place initial polygon!");
+                }
+
+                Edge[] sharedEdges = new Edge[placed.Value.Points.Length];
+                int counter = 0;
+                foreach (var e2 in placed.Value.GetEdges())
+                {
+                    // if an edge is already added, mark it as interior(1).
+                    if (!edgeKinds.TryAdd(e2, 0))
+                    {
+                        edgeKinds[e2] = 1;
+                        sharedEdges[counter++] = e2;
+                    }
+                }
+
+                for (int j = 0; j < counter; j++)
+                {
+                    Edge e2 = sharedEdges[j];
+
+                    //Mark all connecting edges to an interior edge as side edge(2)
+                    foreach (var sideEdge in edgeKinds.Keys.Where(e => e != e2 && e.HasSharedPoint(e2)))
+                    {
+                        edgeKinds[sideEdge] = 2;
+                    }
+                }
+
+            }
+            if (builder.Polygons.Count > 0)
+                split.Add(ToFlattenedStripGeometry(builder, edgeKinds));
+
+            return [.. split];
         }
+
+        private static IFlattenedGeometry ToFlattenedStripGeometry(FlattenedGeometryBuilder builder, Dictionary<Edge, int> edgeKinds)
+            => new StripFlattenedGeometry(builder.ToFlattenedGeometry(), edgeKinds);
 
         private PolygonIndex FindFirstPolygon(List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority)
         {
@@ -94,7 +173,7 @@ namespace SheetCuttingTools.Flattening
                 var poly = geometry.Polygons[added];
                 foreach (var edge in poly.GetEdges())
                 {
-                    foreach(var neighbor in edges[edge])
+                    foreach (var neighbor in edges[edge])
                     {
                         if (neighbor == added)
                             continue;
@@ -107,9 +186,6 @@ namespace SheetCuttingTools.Flattening
                     edges.RemoveElement(edge, added);
                 }
             }
-
-
-
         }
 
         private void RemovePolygonFromState(PolygonIndex polygon, List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry)
@@ -140,7 +216,7 @@ namespace SheetCuttingTools.Flattening
             // true  - prioritize inside of model.
             // false - prioritize boundaries of model.
 
-            IEnumerable<PolygonIndex> selector = null!; 
+            IEnumerable<PolygonIndex> selector = null!;
             if (!direction)
             {
                 selector = candidates
@@ -195,7 +271,7 @@ namespace SheetCuttingTools.Flattening
 
         }
 
-        public StripSegmentUnroller(): this([])
+        public StripSegmentUnroller() : this([])
         {
 
         }
@@ -227,7 +303,7 @@ namespace SheetCuttingTools.Flattening
 
             if (first == -1 || second == -1)
                 return null!;
-            
+
             var firstPoly = polygons[first];
             var secondPoly = polygons[second];
 
@@ -237,7 +313,7 @@ namespace SheetCuttingTools.Flattening
 
             //var second = FindBestFit(polygons, edges, candidates);
 
-            if (!builder.AddPolygon(firstPoly) || !builder.AddPolygon(secondPoly))
+            if (!builder.AddPolygon(firstPoly, out _) || !builder.AddPolygon(secondPoly, out _))
             {
                 Debug.WriteLine("Can't add initial values to builder!");
                 return null!;
@@ -305,7 +381,7 @@ namespace SheetCuttingTools.Flattening
                     candidates = edges[secondEdge].ToArray();
                     if (candidates.Length == 0)
                         break;
-                    
+
 
                     next = polygons[candidates[0]];
                     var nextEdge = FindNextEdge(sharedEdge, secondEdge, next, geometry);
@@ -327,7 +403,7 @@ namespace SheetCuttingTools.Flattening
                     next = polygons[candidates[0]];
                 }
 
-                if (!builder.AddPolygon(next))
+                if (!builder.AddPolygon(next, out _))
                     break;
 
                 strip.Add(next);
@@ -345,7 +421,7 @@ namespace SheetCuttingTools.Flattening
         {
             var goodCandidates = FindPolygonsWithOpenEdges(polygons, edges);
 
-            foreach(var firstIndex in goodCandidates)
+            foreach (var firstIndex in goodCandidates)
             {
                 Edge firstBest = default;
                 Edge secondBest = default;
@@ -354,13 +430,13 @@ namespace SheetCuttingTools.Flattening
                 var first = polygons[firstIndex];
                 var mid = geometry.GetMidPoint3d(first);
                 var firstEdges = first.GetEdges().ToArray();
-                foreach(var a in firstEdges)
+                foreach (var a in firstEdges)
                 {
                     var aMid = geometry.GetMidPoint3d(a);
 
                     var fdir = (mid - aMid).Normalized;
 
-                    foreach(var b in firstEdges)
+                    foreach (var b in firstEdges)
                     {
                         if (a == b)
                             continue;
@@ -411,10 +487,10 @@ namespace SheetCuttingTools.Flattening
             var (sharedA, sharedB) = geometry.GetVertices(shared);
             var sharedMidpoint = (sharedA + sharedB) / 2;
 
-            var (firstA, firstB) = geometry.GetVertices(first);            
+            var (firstA, firstB) = geometry.GetVertices(first);
             var firstMidpoint = (firstA + firstB) / 2;
 
-            var dir1 = sharedMidpoint-firstMidpoint;
+            var dir1 = sharedMidpoint - firstMidpoint;
             dir1.Normalize();
 
 

@@ -36,5 +36,11 @@ namespace SheetCuttingTools.Abstractions.Behaviors
         /// The parent model.
         /// </summary>
         public IGeometry Model { get; } = model;
+
+
+        /// <summary>
+        /// The flattened version of this edge if it exists.
+        /// </summary>
+        public Edge? FlattenedEdge { get; init; }
     }
 }

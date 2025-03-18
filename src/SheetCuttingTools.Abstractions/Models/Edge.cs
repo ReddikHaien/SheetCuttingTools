@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -48,9 +49,15 @@ namespace SheetCuttingTools.Abstractions.Models
         public static bool operator !=(Edge left, Edge right)
             => !(left==right);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool ContainsPoint(int point)
             => point == A || point == B;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool HasSharedPoint(Edge other)
+            => ContainsPoint(other.A) || ContainsPoint(other.B);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int OtherPoint(int point)
             => point == A ? B : A;
 

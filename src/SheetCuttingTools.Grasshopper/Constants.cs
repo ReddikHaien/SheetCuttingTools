@@ -13,6 +13,7 @@ namespace SheetCuttingTools.Grasshopper
         public const string SegmentationCategory = "Segmentation";
         public const string UnrollingCategory = "Unrolling";
         public const string GeometryMakingCategory = "Geometry Making";
+        public const string GeometryInformationCategory = "Geometry Information";
         public const string BehaviorCategory = "Behavior";
     }
 }

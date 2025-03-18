@@ -29,21 +29,22 @@ namespace SheetCuttingTools.Grasshopper.Components.GeometryMaking
         {
             IFlattenedGeometry[] segment;
 
-            IPartMaker hingeMakers;
-
-            IPartMaker edgeMakers;
+            IPartMaker partMaker;
+            IEdgeFilter[] edgeFilters;
+            bool addlabels;
 
             Sheet[] sheet;
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
-                if (segment is null || hingeMakers is null || edgeMakers is null)
+                if (segment is null || partMaker is null)
                     return;
 
                 try
                 {
-                    var maker = new PartGeometryMaker(hingeMakers, edgeMakers);
-                    var context = new GeometryMakerContext();
+                    var maker = new PartGeometryMaker2(partMaker, edgeFilters, addlabels);
+                        var context = new GeometryMakerContext(segment[0]);
+
                     var l = segment.Length;
                     var i = 0;
                     List<Sheet> sheets = new(l);
@@ -92,24 +93,27 @@ namespace SheetCuttingTools.Grasshopper.Components.GeometryMaking
                     throw new InvalidOperationException("Non flattened geometry provided");
                 }
 
-                GH_ObjectWrapper hingeMaker = new();
-                if (!DA.GetData(0, ref hingeMaker))
+                GH_ObjectWrapper partMaker = new();
+                if (!DA.GetData(1, ref partMaker))
                 {
                     AddErrorMessage("Missing hinge maker");
                     return;
                 }
 
-                GH_ObjectWrapper connectionMaker = new();
+                List<GH_ObjectWrapper> edgeFilters = [];
+                DA.GetDataList(2, edgeFilters);
 
-                if (!DA.GetData(1, ref connectionMaker))
-                {
-                    AddErrorMessage("Missing hinge maker");
-                    return;
-                }
+                this.edgeFilters = edgeFilters
+                    .Select(x => x.Value as IEdgeFilter)
+                    .Where(x => x is not null)
+                    .ToArray();
 
-                this.hingeMakers = hingeMaker.Value as IPartMaker;
-                this.edgeMakers = connectionMaker.Value as IPartMaker;
-                if(this.hingeMakers is null ||  this.edgeMakers is null)
+                GH_Boolean addLabels = new();
+                if (!DA.GetData(3, ref addLabels))
+                    addLabels.Value = false;
+
+                this.partMaker = partMaker.Value as IPartMaker;
+                if(this.partMaker is null)
                 {
                     AddErrorMessage("Invalid part makers provided");
                 }
@@ -118,8 +122,9 @@ namespace SheetCuttingTools.Grasshopper.Components.GeometryMaking
             public override void RegisterInputsParams(GH_InputParamManager pManager)
             {
                 pManager.AddGenericParameter("Flattened Geometry", "F", "The flattened segment to process", GH_ParamAccess.list);
-                pManager.AddGenericParameter("Hinge maker", "H", "Part maker for hinges", GH_ParamAccess.item);
-                pManager.AddGenericParameter("Edge maker", "E", "Part maker for boundary edges", GH_ParamAccess.item);
+                pManager.AddGenericParameter("Part maker", "P", "Part maker to use", GH_ParamAccess.item);
+                pManager.AddGenericParameter("Edge filters", "E", "Edge filters to use for selecting the correct edges to process.", GH_ParamAccess.list);
+                pManager.AddBooleanParameter("Add labels", "L", "If this part maker should mark all edges with labels", GH_ParamAccess.item, false);
             }
 
             public override void RegisterOutputParams(GH_OutputParamManager pManager)

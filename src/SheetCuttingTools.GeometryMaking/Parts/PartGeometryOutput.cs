@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace SheetCuttingTools.GeometryMaking.Parts
 {
-    public class PartMakerContext2 : IPartMakerContext
+    public class PartMakerContext : IPartMakerContext
     {
         public bool MaleSide { get; set; }
 

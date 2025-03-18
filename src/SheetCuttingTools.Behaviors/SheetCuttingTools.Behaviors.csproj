@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SheetCuttingTools.Abstractions\SheetCuttingTools.Abstractions.csproj" />
+    <ProjectReference Include="..\SheetCuttingTools.Flattening\SheetCuttingTools.Flattening.csproj" />
     <ProjectReference Include="..\SheetCuttingTools.Infrastructure\SheetCuttingTools.Infrastructure.csproj" />
   </ItemGroup>
 

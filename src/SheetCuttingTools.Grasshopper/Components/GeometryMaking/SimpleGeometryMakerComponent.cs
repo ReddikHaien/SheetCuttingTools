@@ -36,7 +36,7 @@ namespace SheetCuttingTools.Grasshopper.Components.GeometryMaking
                 try
                 {
                     var maker = new SimpleGeometryMaker();
-                    var context = new GeometryMakerContext();
+                    var context = new GeometryMakerContext(segment[0]);
                     var l = segment.Length;
                     var i = 0;
                     List<Sheet> sheets = new(l);

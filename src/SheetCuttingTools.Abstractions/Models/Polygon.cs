@@ -29,7 +29,7 @@ namespace SheetCuttingTools.Abstractions.Models
         /// <param name="other"></param>
         /// <returns></returns>
         public bool Equals(Polygon other)
-            => Points.SequenceEqual(other.Points);
+            => other.GetHashCode() == GetHashCode() && Points.SequenceEqual(other.Points);
 
         public static bool operator ==(Polygon left, Polygon right)
         {

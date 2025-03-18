@@ -38,8 +38,8 @@ public class PaperGeometryMakerComponent() : BaseGeometryMaker("Paper geometry m
 
             try
             {
+                var context = new GeometryMakerContext(segment[0]);
                 var maker = new PaperGeometryMaker();
-                var context = new GeometryMakerContext();
                 var l = segment.Length;
                 var i = 0;
                 List<Sheet> sheets = new(l);
