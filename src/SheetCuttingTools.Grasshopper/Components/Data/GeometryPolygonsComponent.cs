@@ -3,8 +3,11 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
+using SheetCuttingTools.Abstractions.Behaviors;
 using SheetCuttingTools.Abstractions.Contracts;
+using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Grasshopper.Helpers;
+using SheetCuttingTools.Infrastructure.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -46,31 +49,44 @@ namespace SheetCuttingTools.Grasshopper.Components.Data
             
             if (geo is IFlattenedGeometry flattened)
             {
-                DataTree<Point3d> points2d = new();
-                int i = 0;
-                foreach (var (Original, Placed) in flattened.PlacedPolygons)
-                {
-                    int actualId = flattened.Parent.Polygons.Select((x, i) => (x, i)).First(x => x.x == Original).i;
-                    var branch = new GH_Path(0, DA.Iteration, actualId);
-                    points3d.AddRange(Original.Points.Select(x => flattened.Vertices[x].ToPoint3d()), branch);
-                    points2d.AddRange(Placed.Points.Select(x => flattened.Points[x].ToRhinoPoint3d()), branch);
-                    i++;
-                }
-                DA.SetDataTree(1, points2d);
+                LoadDataFromFlattened(flattened, DA);
             }
             else
             {
-                int i = 0;
-                foreach (var polygon in geo.Polygons)
-                {
-                    var branch = new GH_Path(0, DA.Iteration, i);
-                    points3d.AddRange(polygon.Points.Select(x => geo.Vertices[x].ToPoint3d()), branch);
-                    i++;
-                }
+                LoadDataFromUnflattened(geo, DA);
             }
 
             DA.SetDataTree(0, points3d);
 
+        }
+
+        private static void LoadDataFromUnflattened(IGeometry geometry, IGH_DataAccess DA)
+        {
+            DataTree<Point3d> points3d = new();
+            foreach ((Polygon polygon, int pIndex) in geometry.Polygons.Select((x, i) => (x, i)))
+            {
+                var path = new GH_Path(0, DA.Iteration, pIndex);
+
+                points3d.AddRange(geometry.GetVertices(polygon).Select(x => x.ToPoint3d()), path);
+            }
+
+            DA.SetDataTree(0, points3d);
+        }
+
+        private static void LoadDataFromFlattened(IFlattenedGeometry geometry, IGH_DataAccess DA)
+        {
+            DataTree<Point3d> points3d = new();
+            DataTree<Point3d> points2d = new();
+            foreach (((Polygon original, Polygon placed), int pIndex) in geometry.PlacedPolygons.Select((x, i) => (x, i)))
+            {
+                var path = new GH_Path(0, DA.Iteration, pIndex);
+   
+                points3d.AddRange(geometry.GetVertices(original).Select(x => x.ToPoint3d()), path);
+                points2d.AddRange(geometry.GetPoints(placed).Select(x => x.ToRhinoPoint3d()), path);
+            }
+
+            DA.SetDataTree(0, points3d);
+            DA.SetDataTree(1, points2d);
         }
     }
 }

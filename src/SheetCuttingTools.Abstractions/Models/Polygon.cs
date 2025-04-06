@@ -55,6 +55,8 @@ namespace SheetCuttingTools.Abstractions.Models
 
         public bool ContainsSharedPoints(Polygon other)
             => Points.Intersect(other.Points).Any();
-        
+
+        public bool ContainsSharedEdge(Polygon other)
+            => GetEdges().Intersect(other.GetEdges()).Any();
     }
 }
