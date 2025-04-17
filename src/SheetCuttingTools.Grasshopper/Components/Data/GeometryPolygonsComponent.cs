@@ -32,6 +32,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Data
         {
             pManager.AddPointParameter("3D Points", "3DP", "The points in each polygon", GH_ParamAccess.tree);
             pManager.AddPointParameter("2D Points", "2DP", "The unrolled points in each polygon if the incoming geometry is flattened. This is null if there is no flattened points", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("PolygonIds", "PID", "The index of the polygons as arrays. The first element represents the 3d polygon, while the second element, if present represents the 2d polygon.", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -63,10 +64,12 @@ namespace SheetCuttingTools.Grasshopper.Components.Data
         private static void LoadDataFromUnflattened(IGeometry geometry, IGH_DataAccess DA)
         {
             DataTree<Point3d> points3d = new();
+            DataTree<int> polygonIndices = new();
             foreach ((Polygon polygon, int pIndex) in geometry.Polygons.Select((x, i) => (x, i)))
             {
                 var path = new GH_Path(0, DA.Iteration, pIndex);
 
+                polygonIndices.Add(pIndex, path);
                 points3d.AddRange(geometry.GetVertices(polygon).Select(x => x.ToPoint3d()), path);
             }
 
@@ -77,12 +80,17 @@ namespace SheetCuttingTools.Grasshopper.Components.Data
         {
             DataTree<Point3d> points3d = new();
             DataTree<Point3d> points2d = new();
+            DataTree<int> polygonIndices = new();
+            var polygon3dIds = geometry.Polygons.Select((x, i) => (x, i)).ToDictionary(keySelector: x => x.x, elementSelector: x => x.i);
             foreach (((Polygon original, Polygon placed), int pIndex) in geometry.PlacedPolygons.Select((x, i) => (x, i)))
             {
                 var path = new GH_Path(0, DA.Iteration, pIndex);
-   
                 points3d.AddRange(geometry.GetVertices(original).Select(x => x.ToPoint3d()), path);
                 points2d.AddRange(geometry.GetPoints(placed).Select(x => x.ToRhinoPoint3d()), path);
+
+                var oIndex = polygon3dIds[original];
+
+                polygonIndices.AddRange([oIndex, pIndex], path);
             }
 
             DA.SetDataTree(0, points3d);

@@ -30,6 +30,9 @@ public class GeometryEdgesComponent() : GH_Component("Geometry edges", "GE", "Re
     {
         pManager.AddPointParameter("Points 3D", "P3D", "The points in the edge", GH_ParamAccess.tree);
         pManager.AddPointParameter("Points 2D", "P2D", "The points in the edge if the incoming geometry is flattened", GH_ParamAccess.tree);
+        pManager.AddGenericParameter("Edges 3D", "E3D", "The actual edge object", GH_ParamAccess.tree);
+        pManager.AddGenericParameter("Edges 2D", "E2D", "The actual edge object if the incoming geometry is flattened", GH_ParamAccess.tree);
+
     }
 
     protected override void SolveInstance(IGH_DataAccess DA)
@@ -64,6 +67,7 @@ public class GeometryEdgesComponent() : GH_Component("Geometry edges", "GE", "Re
     private static void LoadDataFromUnflattened(IGeometry geometry, IEdgeFilter[] filters, IGH_DataAccess DA)
     {
         DataTree<Point3d> points = new();
+        DataTree<Edge> edges = new();
         foreach (var (polygon, pIndex) in geometry.Polygons.Select((x, i) => (x, i)))
         {
             foreach (var (edge, eIndex) in polygon.GetEdges().Select((x, i) => (x, i)))
@@ -76,16 +80,20 @@ public class GeometryEdgesComponent() : GH_Component("Geometry edges", "GE", "Re
                 var path = new GH_Path(0, DA.Iteration, pIndex, eIndex);
                 (g3.Vector3d a, g3.Vector3d b) = geometry.GetVertices(edge);
                 points.AddRange([a.ToPoint3d(), b.ToPoint3d()], path);
+                edges.Add(edge, path);
             }
         }
 
         DA.SetDataTree(0, points);
+        DA.SetDataTree(2, edges);
     }
 
     private static void LoadDataFromFlattened(IFlattenedGeometry geometry, IEdgeFilter[] filters, IGH_DataAccess DA)
     {
         DataTree<Point3d> points3d = new();
         DataTree<Point3d> points2d = new();
+        DataTree<Edge> edges3d = new();
+        DataTree<Edge> edges2d = new();
         foreach (((Polygon original, Polygon placed), int pIndex) in geometry.PlacedPolygons.Select((x, i) => (x, i)))
         {
             foreach (((Edge oEdge, Edge pEdge), int eIndex) in original.GetEdges().Zip(placed.GetEdges()).Select((x, i) => (x, i)))
@@ -104,10 +112,14 @@ public class GeometryEdgesComponent() : GH_Component("Geometry edges", "GE", "Re
                 (g3.Vector2d a2d, g3.Vector2d b2d) = geometry.GetPoints(pEdge);
                 points3d.AddRange([a3d.ToPoint3d(), b3d.ToPoint3d()], path);
                 points2d.AddRange([a2d.ToRhinoPoint3d(), b2d.ToRhinoPoint3d()], path);
+                edges3d.Add(oEdge, path);
+                edges2d.Add(pEdge, path);
             }
         }
 
         DA.SetDataTree(0, points3d);
         DA.SetDataTree(1, points2d);
+        DA.SetDataTree(2, edges3d);
+        DA.SetDataTree(3, edges2d);
     }
 }
