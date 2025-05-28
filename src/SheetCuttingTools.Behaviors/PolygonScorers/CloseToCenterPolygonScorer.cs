@@ -19,7 +19,7 @@ namespace SheetCuttingTools.Behaviors.PolygonScorers
     public class CloseToCenterPolygonScorer : IPolygonScorer
     {
         public string Name()
-            => "Behavior/PolygonScorer/CloseToCenterPolygonScorer";
+            => $"{IPolygonScorer.RootName}/CloseToCenterPolygonScorer";
 
         public double ScorePolygon(in PolygonScorerCandidate candidate)
         {

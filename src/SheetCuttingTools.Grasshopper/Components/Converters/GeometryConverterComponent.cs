@@ -18,6 +18,7 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Model", "M", "A Rhino model", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Subd subdvision", "S", "How many times to subdivide a subd", GH_ParamAccess.item, 0);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -36,7 +37,13 @@ namespace SheetCuttingTools.Grasshopper.Components.Converters
                     return;
                 }
 
-                var geometry = wrapper.CreateGeometry();
+                GH_Integer subdivision = new();
+                if (!DA.GetData(1, ref subdivision))
+                {
+                    subdivision.Value = 0;
+                }
+
+                var geometry = wrapper.CreateGeometry(subdivision.Value);
 
                 DA.SetData(0, new GH_Geometry(geometry));
             }

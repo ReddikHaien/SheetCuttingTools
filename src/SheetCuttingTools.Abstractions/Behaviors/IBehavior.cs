@@ -11,6 +11,8 @@ namespace SheetCuttingTools.Abstractions.Behaviors
     /// </summary>
     public interface IBehavior
     {
+        public const string RootName = "Behavior";
+
         string Name();
     }
 }

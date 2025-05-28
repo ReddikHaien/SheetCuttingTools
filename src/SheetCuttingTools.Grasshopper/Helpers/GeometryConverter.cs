@@ -16,17 +16,17 @@ namespace SheetCuttingTools.Grasshopper.Helpers
 {
     internal static class GeometryConverter
     {
-        public static IGeometry CreateGeometry(this object value)
+        public static IGeometry CreateGeometry(this object value, int subdivision = 0)
             => value switch
             {
-                GH_ObjectWrapper b => b.Value.CreateGeometry(),
+                GH_ObjectWrapper b => b.Value.CreateGeometry(subdivision),
                 
                 GH_Mesh m => m.Value.CreateGeometry(),
-                GH_SubD s => s.Value.CreateGeometry(),
+                GH_SubD s => s.Value.CreateGeometry(subdivision),
                 GH_Brep b => b.Value.CreateGeometry(),
                 
                 Mesh m => m.CreateGeometry(),
-                SubD s => s.CreateGeometry(),
+                SubD s => s.CreateGeometry(subdivision),
                 Brep b => b.CreateGeometry(),
                 
                 IGeometry i => i,
@@ -35,10 +35,14 @@ namespace SheetCuttingTools.Grasshopper.Helpers
                 _ => throw new NotImplementedException("missing values")
             };
 
-        private static IGeometry CreateGeometry(this SubD subD)
+        private static IGeometry CreateGeometry(this SubD subD, int subdivion)
         {
-            subD = (SubD)subD.Duplicate();
-            subD.Subdivide(1);
+            if (subdivion > 0)
+            {
+                subD = (SubD)subD.Duplicate();
+                subD.Subdivide(subdivion);
+            }
+
             var boundingBox = subD.GetBoundingBox(true);
             OctTree tree = new(boundingBox.Min.ToG3Vector3d(), boundingBox.Max.ToG3Vector3d(), 0.01);
 

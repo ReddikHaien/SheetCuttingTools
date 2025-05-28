@@ -13,6 +13,8 @@ namespace SheetCuttingTools.Abstractions.Behaviors
     /// </summary>
     public interface ISegmentConstraint : IBehavior
     {
+        public new const string RootName = $"{IBehavior.RootName}/GeometryConstraint";
+        
         /// <summary>
         /// Checks a given segment to see if it's valid for this constraint.
         /// </summary>

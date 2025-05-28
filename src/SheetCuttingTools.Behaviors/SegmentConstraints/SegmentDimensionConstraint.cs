@@ -19,7 +19,7 @@ namespace SheetCuttingTools.Behaviors.SegmentConstraints
         private readonly Vector3d dimensions = dimensions;
 
         public string Name()
-            => "Behavior/SegmentConstraint/SegmentDimensionConstraint"; 
+            => $"{ISegmentConstraint.RootName}/Dimension"; 
 
         public bool ValidateSegment(in SegmentCandidate candidate)
         {

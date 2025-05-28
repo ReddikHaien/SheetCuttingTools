@@ -14,21 +14,22 @@ namespace SheetCuttingTools.Abstractions.Models
         /// <summary>
         /// The segment this sheet is built upon
         /// </summary>
-        public IFlattenedGeometry FlattenedSegment { get; set; }
+        public IFlattenedGeometry FlattenedSegment { get; set; } = null!;
 
         /// <summary>
         /// The lines in the sheet, grouped by their category.
         /// </summary>
-        public ILookup<string, Vector2d[]> Lines { get; set; }
+        public ILookup<string, Vector2d[]> Lines { get; set; } = null!;
 
         /// <summary>
         /// The circles in the sheet, grouped by their category.
         /// </summary>
-        public ILookup<string, Circle2d> Circles { get; set; }
+        public ILookup<string, Circle2d> Circles { get; set; } = null!;
 
         /// <summary>
         /// name of boundary edges, used to identity matching edges on different geometries
         /// </summary>
-        public IReadOnlyDictionary<Edge, string> BoundaryNames {  get; set; }
+        public IReadOnlyDictionary<Edge, string> BoundaryNames { get; set; } = null!;
+
     }
 }

@@ -6,6 +6,12 @@ namespace SheetCuttingTools.Abstractions.Contracts
     /// <summary>
     /// Base interface for classes that provide geometry information.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Obsolete, replaced by <see cref="IGeometry"/>.
+    /// </para>
+    /// </remarks>
+    [Obsolete("Replaced by IGeometry")]
     public interface IGeometryProvider
     {
         /// <summary>

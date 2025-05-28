@@ -14,6 +14,26 @@ namespace SheetCuttingTools.Infrastructure.Extensions
     public static class IGeometryExtensions
     {
 
+        public static double GetEdgeAngle(this IGeometry geometry, Edge edge)
+        {
+            var polygons = geometry.Polygons.Where(p => p.GetEdges().Contains(edge)).ToArray();
+            if (polygons.Length != 2)
+                return 0;
+
+            var (ea, eb) = geometry.GetVertices(edge);
+            var ia = polygons[0].Points.First(x => !edge.ContainsPoint(x));
+            var ib = polygons[1].Points.First(x => !edge.ContainsPoint(x));
+
+            var (a, b) = geometry.GetVertices(new Edge(ia, ib));
+
+            var n1 = (eb - ea).Cross(a - ea).Normalized;
+            var n2 = (eb - ea).Cross(b - ea).Normalized;
+
+            var mid = ((n1 + n2) / 2).Normalized;
+
+            return n1.AngleR(mid) + mid.AngleR(n2);
+        }
+
         public static Vector2d[] GetPoints(this IFlattenedGeometry geometry, Polygon polygon, Vector2d[] buf = null!)
         {
             if (buf is null || buf.Length < polygon.Points.Length)
@@ -27,6 +47,7 @@ namespace SheetCuttingTools.Infrastructure.Extensions
             }
             return buf;
         }
+
         public static (Vector2d A, Vector2d) GetPoints(this IFlattenedGeometry geometry, Edge edge)
             => (geometry.Points[edge.A], geometry.Points[edge.B]);
 
