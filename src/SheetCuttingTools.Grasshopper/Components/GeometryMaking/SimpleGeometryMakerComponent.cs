@@ -53,7 +53,7 @@ namespace SheetCuttingTools.Grasshopper.Components.GeometryMaking
                 {
                     AddErrorMessage($"Something went wrong: {e}");
                 }
-            }
+            } // temp
 
             public override WorkerInstance Duplicate()
                 => parent.CreateWorker();
