@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 
 namespace SheetCuttingTools.Abstractions.Models
 {
+
+    [Obsolete("Replaced by IFlattenedGeometry")]
     public class FlattenedSegment : IGeometryProvider
     {
         public IGeometryProvider Segment { get; set; } = null!;

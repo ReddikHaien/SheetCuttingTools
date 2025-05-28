@@ -29,7 +29,7 @@ namespace SheetCuttingTools.Abstractions.Models
         /// <param name="other"></param>
         /// <returns></returns>
         public bool Equals(Polygon other)
-            => Points.SequenceEqual(other.Points);
+            => other.GetHashCode() == GetHashCode() && Points.SequenceEqual(other.Points);
 
         public static bool operator ==(Polygon left, Polygon right)
         {
@@ -52,5 +52,11 @@ namespace SheetCuttingTools.Abstractions.Models
 
             yield return new Edge(Points[^1], Points[0]);
         }
+
+        public bool ContainsSharedPoints(Polygon other)
+            => Points.Intersect(other.Points).Any();
+
+        public bool ContainsSharedEdge(Polygon other)
+            => GetEdges().Intersect(other.GetEdges()).Any();
     }
 }

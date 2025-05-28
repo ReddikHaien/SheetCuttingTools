@@ -12,7 +12,7 @@ namespace SheetCuttingTools.Abstractions.Models
     /// </summary>
     /// <typeparam name="TKey">The key type.</typeparam>
     /// <typeparam name="TElement">The element type.</typeparam>
-    public class MutableLookup<TKey, TElement>(ILookup<TKey, TElement> lookup)
+    public class MutableLookup<TKey, TElement>(ILookup<TKey, TElement> lookup) : IEnumerable<IGrouping<TKey, TElement>>
         where TKey : notnull
     {
 
@@ -51,5 +51,27 @@ namespace SheetCuttingTools.Abstractions.Models
                 dict.Remove(key);
             }
         }
+
+        public IEnumerator<IGrouping<TKey, TElement>> GetEnumerator()
+            => dict.Select(x => new Grouping(x.Key, x.Value)).GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
+
+
+        private class Grouping(TKey key, IReadOnlyList<TElement> list) : IGrouping<TKey, TElement>
+        {
+            public TKey Key => key;
+
+            public IEnumerator<TElement> GetEnumerator()
+                => list.GetEnumerator();
+
+            IEnumerator IEnumerable.GetEnumerator()
+                => list.GetEnumerator();
+        }
     }
+
+    
 }

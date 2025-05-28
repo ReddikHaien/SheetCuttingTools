@@ -13,6 +13,8 @@ namespace SheetCuttingTools.Abstractions.Behaviors
     /// </remarks>
     public interface IPolygonScorer : IBehavior
     {
+        public new const string RootName = $"{IBehavior.RootName}/PolygonScorer";
+
         /// <summary>
         /// Returns a score for a polygon.
         /// </summary>

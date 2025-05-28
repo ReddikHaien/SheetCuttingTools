@@ -3,11 +3,951 @@ using SheetCuttingTools.Abstractions.Behaviors;
 using SheetCuttingTools.Abstractions.Contracts;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Flattening.Builder;
+using SheetCuttingTools.Flattening.Models;
 using SheetCuttingTools.Infrastructure.Extensions;
+using SheetCuttingTools.Infrastructure.Math;
 using System.Diagnostics;
+
+using PolygonIndex = int;
 
 namespace SheetCuttingTools.Flattening
 {
+    public class StripSegmentUnroller3(IFlattenedSegmentConstraint[] flattenedGeometryConstraints, bool flip)
+    {
+        public IFlattenedGeometry[] UnrollSegment(IGeometry geometry, IProgress<double> progress, CancellationToken cancellationToken = default)
+        {
+            //List of polygons to be placed.
+            List<int> polygons = [.. geometry.Polygons.Select((_, i) => i)];
+
+            //lookup of edges and their associated polygons.
+            MutableLookup<Edge, PolygonIndex> edges = new(
+                polygons
+                .SelectMany((x, i) => geometry.Polygons[x]
+                    .GetEdges()
+                    .Select(y => (y, i)))
+                .ToLookup(keySelector: x => x.y, elementSelector: x => x.i));
+
+            Dictionary<PolygonIndex, int> priority = new(
+                polygons
+                .Select((x, i) =>
+                KeyValuePair
+                .Create(i,
+                    geometry.Polygons[x]
+                        .GetEdges()
+                        .Any(x => edges[x].Count == 1) ? 0 : -1)));
+
+            Dictionary<PolygonIndex, int> stripId = [];
+
+            List<IFlattenedGeometry> geos = [];
+
+            var sw = Stopwatch.StartNew();
+
+            while (true)
+            {
+                var geo = CreatedStrip(polygons, edges, priority, geometry, stripId, cancellationToken);
+                if (!geo)
+                    break;
+                //geos.AddRange(geo);
+            }
+
+            sw.Stop();
+            var stripTime = sw.ElapsedMilliseconds;
+            Debug.WriteLine($"Completed strip unroll: strip: {stripTime}ms");
+            sw.Restart();
+            var result = flip
+                ? GetStripsAlong(stripId, geometry)
+                : GetStripsAcross(stripId, geometry);
+
+            sw.Stop();
+            var resultTime = sw.ElapsedMilliseconds;
+            Debug.WriteLine($"Completed strip unroll: reconstruct: {resultTime}ms");
+
+            return result;
+        }
+
+        private IFlattenedGeometry[] GetStripsAlong(Dictionary<PolygonIndex, int> stripId, IGeometry geometry)
+        {
+            var neighbourSet = geometry.Polygons
+                .Select((p, i)
+                    => (
+                        polygon: i,
+                        neighbors: geometry.Polygons
+                            .Select((x, i) => (polygon: x, index: i))
+                            .Where(b => b.index != i)
+                            .Where((b) => b.polygon.ContainsSharedEdge(p))
+                            .Select(b => b.index)
+                            .ToArray()
+                        )
+                    ).ToDictionary(x => x.polygon, x => x.neighbors);
+
+            List<PolygonIndex[]> strips = [];
+            List<(int, PolygonIndex[][])> strips2 = [];
+            while (neighbourSet.Count > 0)
+            {
+                List<Edge> chain = [];
+
+                List<PolygonIndex> strip = [];
+
+                var p = neighbourSet.First().Key;
+
+                List<PolygonIndex> toAddStack = [p];
+                int FId = 0;
+                while (toAddStack.Count > 0)
+                {
+                    var poly = toAddStack.Last();
+                    toAddStack.RemoveAt(toAddStack.Count - 1);
+
+                    int id = stripId[poly];
+                    if (id == 0)
+                        continue;
+
+                    if (FId == 0)
+                        FId = id;
+
+                    var next = neighbourSet[poly].Where(p => stripId[p] == id && stripId[p] > 0).ToArray();
+
+                    foreach (var e in next)
+                    {
+                        chain.Add(new(poly, e));
+                        toAddStack.Add(e);
+                    }
+
+                    neighbourSet.Remove(poly);
+                    stripId[poly] = 0;
+                }
+
+
+                strips2.Add((FId, ArrayTransform.CreateEdgeLoops([.. chain])));
+            }
+
+            strips = strips2.OrderBy(x => x.Item1).SelectMany(x => x.Item2).ToList();
+
+            List<IFlattenedGeometry> split = [];
+
+
+            foreach (var strip in strips)
+            {
+                FlattenedGeometryBuilder builder = new(geometry, flattenedGeometryConstraints);
+                Dictionary<Edge, int> edgeKinds = [];
+
+                int length = strip.First() == strip.Last()
+                    ? strip.Length - 1
+                    : strip.Length;
+
+                for (int i = 0; i < length; i++)
+                {
+                    var polygon = geometry.Polygons[strip[i]];
+
+                    if (!builder.AddPolygon(polygon, out var placed))
+                    {
+                        if (builder.Polygons.Count > 0)
+                            split.Add(ToFlattenedStripGeometry(builder, edgeKinds));
+                        builder = new(geometry, flattenedGeometryConstraints);
+                        edgeKinds = [];
+
+                        if (!builder.AddPolygon(polygon, out placed))
+                            throw new InvalidOperationException("Unable to place initial polygon!");
+                    }
+
+                    Edge[] sharedEdges = new Edge[placed.Value.Points.Length];
+                    int counter = 0;
+                    foreach (var e2 in placed.Value.GetEdges())
+                    {
+                        // if an edge is already added, mark it as interior(1).
+                        if (!edgeKinds.TryAdd(e2, 0))
+                        {
+                            edgeKinds[e2] = 1;
+                            sharedEdges[counter++] = e2;
+                        }
+                    }
+
+                    for (int j = 0; j < counter; j++)
+                    {
+                        Edge e2 = sharedEdges[j];
+
+                        //Mark all connecting edges to an interior edge as side edge(2)
+                        foreach (var sideEdge in edgeKinds.Keys.Where(e => e != e2 && e.HasSharedPoint(e2)))
+                        {
+                            edgeKinds[sideEdge] = 2;
+                        }
+                    }
+
+                }
+                if (builder.Polygons.Count > 0)
+                    split.Add(ToFlattenedStripGeometry(builder, edgeKinds));
+
+            }
+
+            return [.. split];
+        }
+
+        private IFlattenedGeometry[] GetStripsAcross(Dictionary<PolygonIndex, int> stripId, IGeometry geometry)
+        {
+            var neighbourSet = geometry.Polygons
+                .Select((p, i)
+                    => (
+                        polygon: i,
+                        neighbors: geometry.Polygons
+                            .Select((x, i) => (polygon: x, index: i))
+                            .Where(b => b.index != i)
+                            .Where((b) => b.polygon.ContainsSharedEdge(p))
+                            .Select(b => b.index)
+                            .ToArray()
+                        )
+                    ).ToDictionary(x => x.polygon, x => x.neighbors);
+
+            List<PolygonIndex[]> strips = [];
+
+            while (neighbourSet.Count > 0)
+            {
+                List<Edge> chain = [];
+
+                List<PolygonIndex> strip = [];
+
+                var p = neighbourSet.First().Key;
+
+                List<PolygonIndex> toAddStack = [p];
+
+                while (toAddStack.Count > 0)
+                {
+                    var poly = toAddStack.Last();
+                    toAddStack.RemoveAt(toAddStack.Count - 1);
+
+                    int id = stripId[poly];
+                    if (id == 0)
+                        continue;
+
+                    var next = neighbourSet[poly].Where(p => stripId[p] != id && stripId[p] > 0).ToArray();
+
+                    foreach (var e in next)
+                    {
+                        chain.Add(new(poly, e));
+                        toAddStack.Add(e);
+                    }
+
+                    neighbourSet.Remove(poly);
+                    stripId[poly] = 0;
+                }
+
+                strips.AddRange(ArrayTransform.CreateEdgeLoops(chain.ToArray()));
+            }
+
+
+            List<IFlattenedGeometry> split = [];
+
+
+            foreach (var strip in strips)
+            {
+                FlattenedGeometryBuilder builder = new(geometry, flattenedGeometryConstraints);
+                Dictionary<Edge, int> edgeKinds = [];
+
+                int length = strip.First() == strip.Last()
+                    ? strip.Length - 1
+                    : strip.Length;
+
+                for (int i = 0; i < length; i++)
+                {
+                    var polygon = geometry.Polygons[strip[i]];
+
+                    if (!builder.AddPolygon(polygon, out var placed))
+                    {
+                        if (builder.Polygons.Count > 0)
+                            split.Add(ToFlattenedStripGeometry(builder, edgeKinds));
+                        builder = new(geometry, flattenedGeometryConstraints);
+                        edgeKinds = [];
+
+                        if (!builder.AddPolygon(polygon, out placed))
+                            throw new InvalidOperationException("Unable to place initial polygon!");
+                    }
+
+                    Edge[] sharedEdges = new Edge[placed.Value.Points.Length];
+                    int counter = 0;
+                    foreach (var e2 in placed.Value.GetEdges())
+                    {
+                        // if an edge is already added, mark it as interior(1).
+                        if (!edgeKinds.TryAdd(e2, 0))
+                        {
+                            edgeKinds[e2] = 1;
+                            sharedEdges[counter++] = e2;
+                        }
+                    }
+
+                    for (int j = 0; j < counter; j++)
+                    {
+                        Edge e2 = sharedEdges[j];
+
+                        //Mark all connecting edges to an interior edge as side edge(2)
+                        foreach (var sideEdge in edgeKinds.Keys.Where(e => e != e2 && e.HasSharedPoint(e2)))
+                        {
+                            edgeKinds[sideEdge] = 2;
+                        }
+                    }
+
+                }
+                if (builder.Polygons.Count > 0)
+                    split.Add(ToFlattenedStripGeometry(builder, edgeKinds));
+
+            }
+
+            return [.. split];
+        }
+
+        private bool CreatedStrip(List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry, Dictionary<PolygonIndex, int> stripId, CancellationToken cancellationToken = default)
+        {
+
+            PolygonIndex a = FindFirstPolygon(polygons, edges, priority);
+
+            if (a == -1)
+            {
+                return false;
+            }
+
+            List<PolygonIndex> added = [];
+            int maxPriority = -1;
+
+            added.Add(a);
+
+            maxPriority = Math.Max(maxPriority, priority[a]);
+
+            var b = TakeNextPolygon(a, -1, polygons, edges, priority, geometry);
+
+            while (b > -1)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                added.Add(b);
+
+                maxPriority = Math.Max(maxPriority, priority[b]);
+                RemovePolygonFromState(a, polygons, edges, priority, geometry);
+                int o = a;
+                a = b;
+                b = TakeNextPolygon(a, o, polygons, edges, priority, geometry);
+            }
+
+            RemovePolygonFromState(a, polygons, edges, priority, geometry);
+
+            RemoveAndCleanUp(added, edges, priority, geometry, maxPriority);
+
+            int newStripId = stripId.Count + 1;
+            foreach (var aaa in added)
+            {
+                if (!stripId.TryAdd(aaa, newStripId))
+                    throw new InvalidOperationException("Polygon has been added multiple times");
+            }
+
+            return true;
+        }
+
+        private static IFlattenedGeometry ToFlattenedStripGeometry(FlattenedGeometryBuilder builder, Dictionary<Edge, int> edgeKinds)
+            => new StripFlattenedGeometry(builder.ToFlattenedGeometry(), edgeKinds);
+
+        private PolygonIndex FindFirstPolygon(List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority)
+        {
+            return polygons
+                .Where(i => priority[i] > -1)
+                .OrderBy(i => priority[i])
+                .FirstOrDefault(-1);
+        }
+
+        private static void RemoveAndCleanUp(List<PolygonIndex> addedPolygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry, int maxPriority)
+        {
+            foreach (var added in addedPolygons)
+            {
+                var poly = geometry.Polygons[added];
+                foreach (var edge in poly.GetEdges())
+                {
+                    foreach (var neighbor in edges[edge])
+                    {
+                        if (neighbor == added)
+                            continue;
+
+                        if (priority[neighbor] == -1)
+                        {
+                            priority[neighbor] = maxPriority + 1;
+                        }
+                    }
+                    edges.RemoveElement(edge, added);
+                }
+            }
+        }
+
+        private void RemovePolygonFromState(PolygonIndex polygon, List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry)
+        {
+            var poly = geometry.Polygons[polygon];
+
+            polygons.Remove(polygon);
+
+            priority[polygon] = -2;
+        }
+
+        private PolygonIndex TakeNextPolygon(int prev, int prevprev, List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry)
+        {
+            // Who can be placed.
+            IEnumerable<int> candidatesEnumerable = edges
+                .Where(x => x.Contains(prev)) // all neighbors
+                .SelectMany(x => x) // flatten
+                .Where(x => x != prev); // remove previous
+
+
+            //The open edges on the previous array
+            HashSet<int> openEdgesOnPrevious = geometry.Polygons[prev].GetEdges()
+                .Where(x => edges[x].Count == 1) // open edges
+                .SelectMany<Edge, int>(e => [e.A, e.B]) // points on edges
+                .ToHashSet();
+
+            var orderedCandidates = candidatesEnumerable
+                    // Only use boundary polygons
+                    .Where(i => priority[i] > -1)
+                    // Remove polygons that don't share a point along an open edge.
+                    .Where(i => openEdgesOnPrevious.Count == 0 || geometry.Polygons[i].GetEdges().Any(x => openEdgesOnPrevious.Contains(x.A) || openEdgesOnPrevious.Contains(x.B)))
+                    //Find the number of open edges.
+                    .Select(i => (i, c: geometry.Polygons[i].GetEdges().Count(x => edges[x].Count == 1)))
+                    // Order them by descending
+                    .OrderByDescending(t => t.c);
+
+            if (prevprev > -1)
+            {
+                var points = geometry.Polygons[prevprev].Points;
+
+                orderedCandidates = orderedCandidates
+                    .ThenBy(i => geometry.Polygons[i.i].Points.Count(p => points.Contains(p)));
+                //candidatesEnumerable = candidatesEnumerable
+                //    .Where(c => !geometry.Polygons[prevprev].ContainsSharedPoints(geometry.Polygons[c]));
+            }
+
+            var candidates = candidatesEnumerable.ToArray();
+
+            //IEnumerable<PolygonIndex> selector  = candidates
+            //        // Only use boundary polygons
+            //        .Where(i => priority[i] >= -1)
+            //        // Remove polygons that don't share a point along an open edge.
+            //        .Where(i => openEdgesOnPrevious.Count == 0 || geometry.Polygons[i].GetEdges().Any(x => openEdgesOnPrevious.Contains(x.A) || openEdgesOnPrevious.Contains(x.B)))
+            //        //Find the number of open edges.
+            //        .Select(i => (i, c: geometry.Polygons[i].GetEdges().Count(x => edges[x].Count == 1)))
+            //        // Order them by descending
+            //        .OrderByDescending(t => t.c)
+            //        // Remove accidental internal ones.
+            //        //.Where(t => t.c > 0)
+            //        // Only keep the index.
+            //        .Select(t => t.i); 
+
+            var selector = orderedCandidates
+                .Select(x => x.i);
+
+            var test = selector.ToArray();
+
+            var selected = selector
+                .FirstOrDefault(-1);
+
+            if (selected == -1)
+                return TryTakeCornerPolygon(prev, prevprev, polygons, edges, priority, geometry);
+            return selected;
+        }
+
+        /// <summary>
+        /// Tries to find a polygon at a corner of a model.
+        /// </summary>
+        /// <param name="prev"></param>
+        /// <param name="prevprev"></param>
+        /// <param name="polygons"></param>
+        /// <param name="edges"></param>
+        /// <param name="priority"></param>
+        /// <param name="geometry"></param>
+        /// <returns></returns>
+        private PolygonIndex TryTakeCornerPolygon(int prev, int prevprev, List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry)
+        {
+
+            // Who can be placed.
+            IEnumerable<int> candidatesEnumerable = edges
+                .Where(x => x.Contains(prev)) // all neighbors
+                .SelectMany(x => x) // flatten
+                .Where(x => x != prev); // remove previous
+
+            //The open edges on the previous array
+            HashSet<int> openPoints = geometry.Polygons[prev].GetEdges()
+                .Where(x => edges[x].Count == 1) // open edges
+                .SelectMany<Edge, int>(e => [e.A, e.B]) // points on edges
+                .ToHashSet();
+
+            if (prevprev > -1)
+            {
+                var sharedOpens = geometry.Polygons[prevprev].GetEdges()
+                    .Where(x => edges[x].Count == 1) // open edges
+                    .SelectMany<Edge, int>(e => [e.A, e.B]).ToArray();
+
+                foreach (var p in geometry.Polygons[prev].Points)
+                {
+                    if (sharedOpens.Contains(p))
+                    {
+                        openPoints.Add(p);
+                    }
+                }
+            }
+
+            var orderedCandidates = candidatesEnumerable
+                    // Only use internal polygons
+                    .Where(i => priority[i] == -1)
+                    // Remove polygons that don't share a point along an open edge.
+                    .Where(i => geometry.Polygons[i].GetEdges().Any(x => openPoints.Contains(x.A) || openPoints.Contains(x.B)))
+                    //Find the number of open edges.
+                    .Select(i => (i, c: geometry.Polygons[i].GetEdges().Count(x => edges[x].Count == 1)))
+                    // Order them by descending
+                    .OrderByDescending(t => t.c);
+
+            if (prevprev > -1)
+            {
+                var points = geometry.Polygons[prevprev].Points;
+                orderedCandidates = orderedCandidates
+                    .ThenBy(i => geometry.Polygons[i.i].Points.Count(p => points.Contains(p)));
+                //candidatesEnumerable = candidatesEnumerable
+                //    .Where(c => !geometry.Polygons[prevprev].ContainsSharedPoints(geometry.Polygons[c]));
+            }
+
+            var candidates = candidatesEnumerable.ToArray();
+
+            var selector = orderedCandidates
+                .Select(x => x.i);
+
+            var test = selector.ToArray();
+
+            return selector
+                .FirstOrDefault(-1);
+        }
+    }
+
+    public class StripSegmentUnroller2(IFlattenedSegmentConstraint[] flattenedGeometryConstraints, bool direction)
+    {
+        public IFlattenedGeometry[] UnrollSegment(IGeometry geometry, IProgress<double> progress, CancellationToken cancellationToken = default)
+        {
+            //List of polygons to be placed.
+            List<int> polygons = [.. geometry.Polygons.Select((_, i) => i)];
+
+            //lookup of edges and their associated polygons.
+            MutableLookup<Edge, PolygonIndex> edges = new(polygons.SelectMany((x, i) => geometry.Polygons[x].GetEdges().Select(y => (y, i))).ToLookup(keySelector: x => x.y, elementSelector: x => x.i));
+
+            Dictionary<PolygonIndex, int> priority = new(polygons.Select((x, i) => KeyValuePair.Create(i, geometry.Polygons[x].GetEdges().Any(x => edges[x].Count == 1) ? 0 : -1)));
+
+            Dictionary<PolygonIndex, int> stripId = [];
+
+            List<IFlattenedGeometry> geos = [];
+
+            while (true)
+            {
+                var geo = CreatedStrip(polygons, edges, priority, geometry, stripId, cancellationToken);
+                if (!geo)
+                    break;
+                //geos.AddRange(geo);
+            }
+
+            if (direction)
+            {
+                return GetStripsAlong(stripId, geometry);
+            }
+
+            return GetStripsAcross(stripId, geometry);
+        }
+
+        private IFlattenedGeometry[] GetStripsAlong(Dictionary<PolygonIndex, int> stripId, IGeometry geometry)
+        {
+            var neighbourSet = geometry.Polygons
+                .Select((p, i) 
+                    => (
+                        polygon: i,
+                        neighbors: geometry.Polygons
+                            .Select((x, i) => (polygon: x, index: i))
+                            .Where(b => b.index != i)
+                            .Where((b) => b.polygon.ContainsSharedEdge(p))
+                            .Select(b => b.index)
+                            .ToArray()
+                        )
+                    ).ToDictionary(x => x.polygon, x => x.neighbors);
+
+            List<PolygonIndex[]> strips = [];
+
+            while(neighbourSet.Count > 0)
+            {
+                List<Edge> chain = [];
+
+                List<PolygonIndex> strip = [];
+
+                var p = neighbourSet.First().Key;
+                
+                List<PolygonIndex> toAddStack = [p];
+
+                while (toAddStack.Count > 0)
+                {
+                    var poly = toAddStack.Last();
+                    toAddStack.RemoveAt(toAddStack.Count - 1);
+                    
+                    int id = stripId[poly];
+                    if (id == 0)
+                        continue;
+
+                    var next = neighbourSet[poly].Where(p => stripId[p] == id && stripId[p] > 0).ToArray();
+
+                    foreach(var e in next)
+                    {
+                        chain.Add(new(poly, e));
+                        toAddStack.Add(e);
+                    }
+
+                    neighbourSet.Remove(poly);
+                    stripId[poly] = 0;
+                }
+
+                strips.AddRange(ArrayTransform.CreateEdgeLoops(chain.ToArray()));
+            }
+
+
+            List<IFlattenedGeometry> split = [];
+
+
+            foreach (var strip in strips)
+            {
+                FlattenedGeometryBuilder builder = new(geometry, flattenedGeometryConstraints);
+                Dictionary<Edge, int> edgeKinds = [];
+
+                int length = strip.First() == strip.Last() 
+                    ? strip.Length - 1
+                    : strip.Length;
+
+                for (int i = 0; i < length; i++)
+                {
+                    var polygon = geometry.Polygons[strip[i]];
+
+                    if (!builder.AddPolygon(polygon, out var placed))
+                    {
+                        if (builder.Polygons.Count > 0)
+                            split.Add(ToFlattenedStripGeometry(builder, edgeKinds));
+                        builder = new(geometry, flattenedGeometryConstraints);
+                        edgeKinds = [];
+
+                        if (!builder.AddPolygon(polygon, out placed))
+                            throw new InvalidOperationException("Unable to place initial polygon!");
+                    }
+
+                    Edge[] sharedEdges = new Edge[placed.Value.Points.Length];
+                    int counter = 0;
+                    foreach (var e2 in placed.Value.GetEdges())
+                    {
+                        // if an edge is already added, mark it as interior(1).
+                        if (!edgeKinds.TryAdd(e2, 0))
+                        {
+                            edgeKinds[e2] = 1;
+                            sharedEdges[counter++] = e2;
+                        }
+                    }
+
+                    for (int j = 0; j < counter; j++)
+                    {
+                        Edge e2 = sharedEdges[j];
+
+                        //Mark all connecting edges to an interior edge as side edge(2)
+                        foreach (var sideEdge in edgeKinds.Keys.Where(e => e != e2 && e.HasSharedPoint(e2)))
+                        {
+                            edgeKinds[sideEdge] = 2;
+                        }
+                    }
+
+                }
+                if (builder.Polygons.Count > 0)
+                    split.Add(ToFlattenedStripGeometry(builder, edgeKinds));
+
+            }
+
+            return [.. split]; 
+        }
+
+        private IFlattenedGeometry[] GetStripsAcross(Dictionary<PolygonIndex, int> stripId, IGeometry geometry)
+        {
+            var neighbourSet = geometry.Polygons
+                .Select((p, i)
+                    => (
+                        polygon: i,
+                        neighbors: geometry.Polygons
+                            .Select((x, i) => (polygon: x, index: i))
+                            .Where(b => b.index != i)
+                            .Where((b) => b.polygon.ContainsSharedEdge(p))
+                            .Select(b => b.index)
+                            .ToArray()
+                        )
+                    ).ToDictionary(x => x.polygon, x => x.neighbors);
+
+            List<PolygonIndex[]> strips = [];
+
+            while (neighbourSet.Count > 0)
+            {
+                List<Edge> chain = [];
+
+                List<PolygonIndex> strip = [];
+
+                var p = neighbourSet.First().Key;
+
+                List<PolygonIndex> toAddStack = [p];
+
+                while (toAddStack.Count > 0)
+                {
+                    var poly = toAddStack.Last();
+                    toAddStack.RemoveAt(toAddStack.Count - 1);
+
+                    int id = stripId[poly];
+                    if (id == 0)
+                        continue;
+
+                    var next = neighbourSet[poly].Where(p => stripId[p] != id && stripId[p] > 0).ToArray();
+
+                    foreach (var e in next)
+                    {
+                        chain.Add(new(poly, e));
+                        toAddStack.Add(e);
+                    }
+
+                    neighbourSet.Remove(poly);
+                    stripId[poly] = 0;
+                }
+
+                strips.AddRange(ArrayTransform.CreateEdgeLoops(chain.ToArray()));
+            }
+
+
+            List<IFlattenedGeometry> split = [];
+
+
+            foreach (var strip in strips)
+            {
+                FlattenedGeometryBuilder builder = new(geometry, flattenedGeometryConstraints);
+                Dictionary<Edge, int> edgeKinds = [];
+
+                int length = strip.First() == strip.Last()
+                    ? strip.Length - 1
+                    : strip.Length;
+
+                for (int i = 0; i < length; i++)
+                {
+                    var polygon = geometry.Polygons[strip[i]];
+
+                    if (!builder.AddPolygon(polygon, out var placed))
+                    {
+                        if (builder.Polygons.Count > 0)
+                            split.Add(ToFlattenedStripGeometry(builder, edgeKinds));
+                        builder = new(geometry, flattenedGeometryConstraints);
+                        edgeKinds = [];
+
+                        if (!builder.AddPolygon(polygon, out placed))
+                            throw new InvalidOperationException("Unable to place initial polygon!");
+                    }
+
+                    Edge[] sharedEdges = new Edge[placed.Value.Points.Length];
+                    int counter = 0;
+                    foreach (var e2 in placed.Value.GetEdges())
+                    {
+                        // if an edge is already added, mark it as interior(1).
+                        if (!edgeKinds.TryAdd(e2, 0))
+                        {
+                            edgeKinds[e2] = 1;
+                            sharedEdges[counter++] = e2;
+                        }
+                    }
+
+                    for (int j = 0; j < counter; j++)
+                    {
+                        Edge e2 = sharedEdges[j];
+
+                        //Mark all connecting edges to an interior edge as side edge(2)
+                        foreach (var sideEdge in edgeKinds.Keys.Where(e => e != e2 && e.HasSharedPoint(e2)))
+                        {
+                            edgeKinds[sideEdge] = 2;
+                        }
+                    }
+
+                }
+                if (builder.Polygons.Count > 0)
+                    split.Add(ToFlattenedStripGeometry(builder, edgeKinds));
+
+            }
+
+            return [.. split];
+        }
+
+        private bool CreatedStrip(List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry, Dictionary<PolygonIndex, int> stripId, CancellationToken cancellationToken = default)
+        {
+
+            PolygonIndex a = FindFirstPolygon(polygons, edges, priority);
+
+            if (a == -1)
+            {
+                return false;
+            }
+
+            List<PolygonIndex> added = [];
+            int maxPriority = -1;
+
+            added.Add(a);
+
+            maxPriority = Math.Max(maxPriority, priority[a]);
+
+            var b = TakeNextPolygon(a, -1, polygons, edges, priority, geometry);
+
+            while (b > -1)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                
+                added.Add(b);
+                
+                maxPriority = Math.Max(maxPriority, priority[b]);
+                RemovePolygonFromState(a, polygons, edges, priority, geometry);
+                int o = a;
+                a = b;
+                b = TakeNextPolygon(a, o, polygons, edges, priority, geometry);
+            }
+
+            RemovePolygonFromState(a, polygons, edges, priority, geometry);
+
+            RemoveAndCleanUp(added, edges, priority, geometry, maxPriority);
+
+            int newStripId = stripId.Count + 1;
+            foreach(var aaa in added)
+            {
+                if (!stripId.TryAdd(aaa, newStripId))
+                    throw new InvalidOperationException("Polygon has been added multiple times");
+            }
+
+            return true;
+
+            //List<IFlattenedGeometry> split = [];
+
+            //FlattenedGeometryBuilder builder = new(geometry, flattenedGeometryConstraints);
+            //Dictionary<Edge, int> edgeKinds = [];
+
+            //for (int i = 0; i < added.Count; i++)
+            //{
+            //    var polygon = geometry.Polygons[added[i]];
+
+            //    if (!builder.AddPolygon(polygon, out var placed))
+            //    {
+            //        if (builder.Polygons.Count > 0)
+            //            split.Add(ToFlattenedStripGeometry(builder, edgeKinds));
+            //        builder = new(geometry, flattenedGeometryConstraints);
+            //        edgeKinds = [];
+
+            //        if (!builder.AddPolygon(polygon, out placed))
+            //            throw new InvalidOperationException("Unable to place initial polygon!");
+            //    }
+
+            //    Edge[] sharedEdges = new Edge[placed.Value.Points.Length];
+            //    int counter = 0;
+            //    foreach (var e2 in placed.Value.GetEdges())
+            //    {
+            //        // if an edge is already added, mark it as interior(1).
+            //        if (!edgeKinds.TryAdd(e2, 0))
+            //        {
+            //            edgeKinds[e2] = 1;
+            //            sharedEdges[counter++] = e2;
+            //        }
+            //    }
+
+            //    for (int j = 0; j < counter; j++)
+            //    {
+            //        Edge e2 = sharedEdges[j];
+
+            //        //Mark all connecting edges to an interior edge as side edge(2)
+            //        foreach (var sideEdge in edgeKinds.Keys.Where(e => e != e2 && e.HasSharedPoint(e2)))
+            //        {
+            //            edgeKinds[sideEdge] = 2;
+            //        }
+            //    }
+
+            //}
+            //if (builder.Polygons.Count > 0)
+            //    split.Add(ToFlattenedStripGeometry(builder, edgeKinds));
+
+
+
+            //return [.. split];
+        }
+
+        private static IFlattenedGeometry ToFlattenedStripGeometry(FlattenedGeometryBuilder builder, Dictionary<Edge, int> edgeKinds)
+            => new StripFlattenedGeometry(builder.ToFlattenedGeometry(), edgeKinds);
+
+        private PolygonIndex FindFirstPolygon(List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority)
+        {
+            return polygons
+                .Where(i => priority[i] > -1)
+                .OrderBy(i => priority[i])
+                .FirstOrDefault(-1);
+        }
+
+        private static void RemoveAndCleanUp(List<PolygonIndex> addedPolygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry, int maxPriority)
+        {
+            foreach (var added in addedPolygons)
+            {
+                var poly = geometry.Polygons[added];
+                foreach (var edge in poly.GetEdges())
+                {
+                    foreach (var neighbor in edges[edge])
+                    {
+                        if (neighbor == added)
+                            continue;
+
+                        if (priority[neighbor] == -1)
+                        {
+                            priority[neighbor] = maxPriority + 1;
+                        }
+                    }
+                    edges.RemoveElement(edge, added);
+                }
+            }
+        }
+
+        private void RemovePolygonFromState(PolygonIndex polygon, List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry)
+        {
+            var poly = geometry.Polygons[polygon];
+
+            polygons.Remove(polygon);
+
+            priority[polygon] = -2;
+        }
+
+        private PolygonIndex TakeNextPolygon(int prev, int prevprev, List<PolygonIndex> polygons, MutableLookup<Edge, PolygonIndex> edges, Dictionary<PolygonIndex, int> priority, IGeometry geometry)
+        {
+            // Who can be placed.
+            var candidatesEnumerable = edges
+                .Where(x => x.Contains(prev)) // all neighbors
+                .SelectMany(x => x) // flatten
+                .Where(x => x != prev); // remove previous
+
+            //The open edges on the previous array
+            var openEdgesOnPrevious = geometry.Polygons[prev].GetEdges().Where(x => edges[x].Count == 1).SelectMany<Edge, int>(e => [e.A, e.B]).ToHashSet();
+    
+            if (prevprev > -1)
+            {
+                candidatesEnumerable = candidatesEnumerable
+                    .Where(c => !geometry.Polygons[prevprev].ContainsSharedPoints(geometry.Polygons[c]));
+            }
+
+            var candidates = candidatesEnumerable.ToArray();
+
+            IEnumerable<PolygonIndex> selector  = candidates
+                    // Only use boundary polygons
+                    .Where(i => priority[i] >= -1)
+                    // Remove polygons that don't share a point along an open edge.
+                    .Where(i => openEdgesOnPrevious.Count == 0 || geometry.Polygons[i].GetEdges().Any(x => openEdgesOnPrevious.Contains(x.A) || openEdgesOnPrevious.Contains(x.B)))
+                    //Find the number of open edges.
+                    .Select(i => (i, c: geometry.Polygons[i].GetEdges().Count(x => edges[x].Count == 1)))
+                    // Order them by descending
+                    .OrderByDescending(t => t.c)
+                    // Remove accidental internal ones.
+                    //.Where(t => t.c > 0)
+                    // Only keep the index.
+                    .Select(t => t.i); 
+
+            var test = selector.ToArray();
+
+            return selector
+                .FirstOrDefault(-1);
+        }
+    }
+
     /// <summary>
     /// A strip unroller
     /// </summary>
@@ -30,7 +970,7 @@ namespace SheetCuttingTools.Flattening
 
         }
 
-        public StripSegmentUnroller(): this([])
+        public StripSegmentUnroller() : this([])
         {
 
         }
@@ -62,7 +1002,7 @@ namespace SheetCuttingTools.Flattening
 
             if (first == -1 || second == -1)
                 return null!;
-            
+
             var firstPoly = polygons[first];
             var secondPoly = polygons[second];
 
@@ -72,7 +1012,7 @@ namespace SheetCuttingTools.Flattening
 
             //var second = FindBestFit(polygons, edges, candidates);
 
-            if (!builder.AddPolygon(firstPoly) || !builder.AddPolygon(secondPoly))
+            if (!builder.AddPolygon(firstPoly, out _) || !builder.AddPolygon(secondPoly, out _))
             {
                 Debug.WriteLine("Can't add initial values to builder!");
                 return null!;
@@ -140,7 +1080,7 @@ namespace SheetCuttingTools.Flattening
                     candidates = edges[secondEdge].ToArray();
                     if (candidates.Length == 0)
                         break;
-                    
+
 
                     next = polygons[candidates[0]];
                     var nextEdge = FindNextEdge(sharedEdge, secondEdge, next, geometry);
@@ -162,7 +1102,7 @@ namespace SheetCuttingTools.Flattening
                     next = polygons[candidates[0]];
                 }
 
-                if (!builder.AddPolygon(next))
+                if (!builder.AddPolygon(next, out _))
                     break;
 
                 strip.Add(next);
@@ -180,7 +1120,7 @@ namespace SheetCuttingTools.Flattening
         {
             var goodCandidates = FindPolygonsWithOpenEdges(polygons, edges);
 
-            foreach(var firstIndex in goodCandidates)
+            foreach (var firstIndex in goodCandidates)
             {
                 Edge firstBest = default;
                 Edge secondBest = default;
@@ -189,13 +1129,13 @@ namespace SheetCuttingTools.Flattening
                 var first = polygons[firstIndex];
                 var mid = geometry.GetMidPoint3d(first);
                 var firstEdges = first.GetEdges().ToArray();
-                foreach(var a in firstEdges)
+                foreach (var a in firstEdges)
                 {
                     var aMid = geometry.GetMidPoint3d(a);
 
                     var fdir = (mid - aMid).Normalized;
 
-                    foreach(var b in firstEdges)
+                    foreach (var b in firstEdges)
                     {
                         if (a == b)
                             continue;
@@ -246,10 +1186,10 @@ namespace SheetCuttingTools.Flattening
             var (sharedA, sharedB) = geometry.GetVertices(shared);
             var sharedMidpoint = (sharedA + sharedB) / 2;
 
-            var (firstA, firstB) = geometry.GetVertices(first);            
+            var (firstA, firstB) = geometry.GetVertices(first);
             var firstMidpoint = (firstA + firstB) / 2;
 
-            var dir1 = sharedMidpoint-firstMidpoint;
+            var dir1 = sharedMidpoint - firstMidpoint;
             dir1.Normalize();
 
 

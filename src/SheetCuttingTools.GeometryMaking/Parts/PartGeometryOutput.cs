@@ -1,4 +1,5 @@
 ﻿using g3;
+using SheetCuttingTools.Abstractions.Behaviors;
 using SheetCuttingTools.Abstractions.Models;
 using SheetCuttingTools.Infrastructure.Extensions;
 using SheetCuttingTools.Infrastructure.Math;
@@ -10,18 +11,34 @@ using System.Threading.Tasks;
 
 namespace SheetCuttingTools.GeometryMaking.Parts
 {
-    public class PartMakerContext(bool maleSide)
+    public class PartMakerContext : IPartMakerContext
     {
-        public bool MaleSide { get; } = maleSide;
+        public bool MaleSide { get; set; }
 
+        public Edge Edge { get; set; }
+
+        public Vector2d A { get; set; }
+
+        public Vector2d B { get; set; }
+
+        public Vector2d OriginalA { get; set; }
+
+        public Vector2d OriginalB { get; set; }
+
+        public Vector2d U { get; set; }
+
+        public Vector2d V { get; set; }
+    }
+
+    public class PartGeometryOutput : IPartGeometryOutput
+    {
         private readonly Dictionary<string, (List<Vector2d> points, HashSet<Edge> edges, List<Circle2d> circles)> groups = [];
-
         /// <summary>
         /// Adds a line of points to this context.
         /// </summary>
         /// <param name="closed">If the line should be closed.</param>
         /// <param name="points">The points to add.</param>
-        public void AddLine(IReadOnlyList<Vector2d> points, string category = "Line", bool closed = false)
+        public void AddLine(IEnumerable<Vector2d> points, string category = "Line", bool closed = false)
         {
             foreach(var (a ,b) in points.SlidingWindow(closed))
             {
@@ -74,7 +91,7 @@ namespace SheetCuttingTools.GeometryMaking.Parts
         /// Merges a different context into this one.
         /// </summary>
         /// <param name="other">The other context to merge.</param>
-        public void AddContext(PartMakerContext other)
+        public void AddContext(PartGeometryOutput other)
         {
             foreach(var group in other.groups)
             {

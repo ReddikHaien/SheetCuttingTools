@@ -16,6 +16,8 @@ namespace SheetCuttingTools.Abstractions.Behaviors
     /// </summary>
     public interface IFlattenedSegmentConstraint : IBehavior
     {
+        public new const string RootName = $"{IBehavior.RootName}/FlattenedGeometryConstraint";
+
         /// <summary>
         /// Checks a given flattened segment to see if it's valid for this constraint.
         /// </summary>

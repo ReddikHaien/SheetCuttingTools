@@ -14,7 +14,7 @@ namespace SheetCuttingTools.Behaviors.FlattenedSegmentConstraints
     public class FlattenedSegmentDimensionConstraint(double width, double height) : IFlattenedSegmentConstraint
     {
         public string Name()
-            => "Behavior/FlattenedSegmentConstraint/DimensionConstraint";
+            => $"{IFlattenedSegmentConstraint.RootName}/Dimension";
 
         public bool ValidateFlatSegment(in FlattenedSegmentCandidate candidate)
         {

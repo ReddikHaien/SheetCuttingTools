@@ -20,6 +20,6 @@ namespace SheetCuttingTools.Behaviors.EdgeFilters
         }
 
         public string Name()
-            => "Behavior/EdgeFilter/MinEdgeLengthFilter";
+            => $"{IEdgeFilter.RootName}/MinEdgeLength";
     }
 }

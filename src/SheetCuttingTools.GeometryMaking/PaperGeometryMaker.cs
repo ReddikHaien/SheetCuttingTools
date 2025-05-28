@@ -8,7 +8,7 @@ using System.Numerics;
 
 namespace SheetCuttingTools.GeometryMaking
 {
-    public class PaperGeometryMaker
+    public class PaperGeometryMaker(double taplength, double tapSteepness, double labelSize)
     {
         public const string Boundary = "Paper.Boundary";
         public const string ValleyFold = "Paper.ValleyFold";
@@ -142,8 +142,8 @@ namespace SheetCuttingTools.GeometryMaking
                     var u = pb - pa;
                     segment.BoundaryNormal.TryGetValue(edge, out var v);
 
-                    var p2 = v * 3 + u * 0.25f;
-                    var p3 = v * 3 + u * 0.75f;
+                    var p2 = v * taplength + u * tapSteepness;
+                    var p3 = v * taplength + u * (1.0 - tapSteepness);
 
                     bool overlap = false;
                     for (int i = 0; i < boundaryLine.Count - 1; i++)

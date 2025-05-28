@@ -39,8 +39,8 @@ namespace SheetCuttingTools.Grasshopper.Components.Unrolling
                 try
                 {
                     var progress = new ToolProgress(Id, ReportProgress);
-                    var unroller = new StripSegmentUnroller(flattenedSegmentConstraints, preferredStripDirection.ToG3Vector3d(), treatDirectionAsPlane);
-                    flattened = unroller.UnrollSegment(segment, CancellationToken);
+                    var unroller = new StripSegmentUnroller2(flattenedSegmentConstraints, treatDirectionAsPlane);// preferredStripDirection.ToG3Vector3d(), treatDirectionAsPlane);
+                    flattened = unroller.UnrollSegment(segment, progress, CancellationToken);
                     if (!CancellationToken.IsCancellationRequested)
                         Done();
                 }

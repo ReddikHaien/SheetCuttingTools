@@ -7,6 +7,7 @@ using SheetCuttingTools.Infrastructure.Extensions;
 using SheetCuttingTools.Infrastructure.Math;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -31,8 +32,10 @@ namespace SheetCuttingTools.Flattening.Builder
 
         public List<(Polygon Original, Polygon Placed)> Polygons { get; set; } = [];
 
-        public bool AddPolygon(Polygon polygon)
+        public bool AddPolygon(Polygon polygon, [NotNullWhen(true)] out Polygon? placed)
         {
+            placed = null;
+
             var polygonEdges = polygon.GetEdges().ToArray();
             var numEdges = polygonEdges.Length;
             var (foundExistingEdge, originalEdge, edgeEntry) = polygonEdges
@@ -196,6 +199,7 @@ namespace SheetCuttingTools.Flattening.Builder
                 mappedPoints[i] = m;
             }
 
+            placed = new(mappedPoints);
             Polygons.Add((polygon, new(mappedPoints)));
             return true;
         }

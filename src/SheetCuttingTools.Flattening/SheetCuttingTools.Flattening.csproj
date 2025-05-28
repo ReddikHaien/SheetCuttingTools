@@ -8,7 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SheetCuttingTools.Behaviors\SheetCuttingTools.Behaviors.csproj" />
+	  <ProjectReference Include="..\SheetCuttingTools.Abstractions\SheetCuttingTools.Abstractions.csproj" />
+	  <ProjectReference Include="..\SheetCuttingTools.Infrastructure\SheetCuttingTools.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
