@@ -95,13 +95,13 @@ public class PaperGeometryMakerComponent() : BaseGeometryMaker("Paper geometry m
             GH_Number tapSteepness = new();
             GH_Number labelSize = new();
 
-            if (!DA.GetData(0, ref tapLength))
+            if (!DA.GetData(1, ref tapLength))
                 tapLength.Value = 3.0;
 
-            if (!DA.GetData(1, ref tapSteepness))
+            if (!DA.GetData(2, ref tapSteepness))
                 tapSteepness.Value = 0.25;
 
-            if (!DA.GetData(2, ref labelSize))
+            if (!DA.GetData(3, ref labelSize))
                 labelSize.Value = 3;
 
             this.tapLength = tapLength.Value;
