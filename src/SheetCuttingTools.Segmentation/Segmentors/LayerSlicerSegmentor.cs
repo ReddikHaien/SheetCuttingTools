@@ -49,7 +49,7 @@ namespace SheetCuttingTools.Segmentation.Segmentors
 
                 foreach(var polygon in geo.Polygons)
                 {
-                    polygon.Points.Select(p =>
+                    var newPoints = polygon.Points.Select(p =>
                     {
                         var v = geo.Vertices[p];
                         if (tree.GetValue(v, out var index))
@@ -62,8 +62,12 @@ namespace SheetCuttingTools.Segmentation.Segmentors
                         return index;
 
                     }).ToArray();
-                    polygons.Add(polygon);
+
+                    polygons.Add(new(newPoints));
                 }
+
+                
+
                 fixedGeometries.Add(polygons.ToArray());
             }
 
